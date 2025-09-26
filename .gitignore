@@ -1,0 +1,21 @@
+# Node build artifacts
+node_modules/
+dist/
+coverage/
+
+# Environment configuration
+.env
+.env.*
+
+# Logs and diagnostics
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript build metadata
+*.tsbuildinfo
+
+# Local tooling
+.idea/
+.vscode/
+.DS_Store
