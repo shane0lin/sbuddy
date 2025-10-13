@@ -3,9 +3,12 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import passport from './config/passport';
+import session from 'express-session';
 import { initializeDatabase } from './models/database';
 import { createGamificationTables } from './services/gamificationService';
 import routes from './routes';
+import authRoutes from './routes/auth';
 
 dotenv.config();
 
@@ -27,8 +30,25 @@ app.use('/webhooks/stripe', express.raw({ type: 'application/json' })); // Raw b
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Session middleware for OAuth (required by Passport)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'fallback-session-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
 // API routes
-app.use('/api/v1', routes);
+app.use('/api/v1/auth', authRoutes); // New enhanced auth routes
+app.use('/api/v1', routes); // Existing routes
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
