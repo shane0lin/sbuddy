@@ -32,6 +32,14 @@ router.post('/ocr/process-buffer',
   (req: any, res) => ocrController.processImageBuffer(req, res)
 );
 
+// New: Enhanced multi-problem detection with AI
+router.post('/ocr/process-multi',
+  authenticateToken,
+  rateLimiter(10, 60000),
+  ocrController.uploadMiddleware,
+  (req: any, res) => ocrController.processMultipleProblems(req, res)
+);
+
 router.get('/ocr/health', ocrController.healthCheck);
 
 // Problem routes
