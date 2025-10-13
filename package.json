@@ -12,6 +12,7 @@
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
     "typecheck": "tsc --noEmit",
+    "migrate": "ts-node scripts/runMigrations.ts",
     "scrape-amc": "ts-node scripts/scrapeAMC.ts",
     "scrape-amc:test": "ts-node scripts/scrapeAMC.ts --test-connection",
     "scrape-amc:full": "ts-node scripts/scrapeAMC.ts --full-scrape",
