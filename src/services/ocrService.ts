@@ -2,12 +2,13 @@ import axios from 'axios';
 import FormData from 'form-data';
 import { OCRResult } from '../types';
 import fs from 'fs';
+import config from '../config/env';
 
 export class OCRService {
   private readonly serviceUrl: string;
 
   constructor() {
-    this.serviceUrl = process.env.OCR_SERVICE_URL || 'http://localhost:8000';
+    this.serviceUrl = config.OCR_SERVICE_URL;
   }
 
   async processImage(imagePath: string): Promise<OCRResult> {

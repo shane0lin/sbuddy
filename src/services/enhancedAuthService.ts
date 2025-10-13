@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import speakeasy from 'speakeasy';
 import nodemailer from 'nodemailer';
+import config from '../config/env';
 
 interface TokenPair {
   accessToken: string;
@@ -20,19 +21,19 @@ export class EnhancedAuthService {
   private readonly emailTransporter: nodemailer.Transporter;
 
   constructor() {
-    this.jwtSecret = process.env.JWT_SECRET || 'fallback-secret';
-    this.jwtRefreshSecret = process.env.JWT_REFRESH_SECRET || 'fallback-refresh-secret';
-    this.accessTokenExpiresIn = process.env.JWT_EXPIRES_IN || '15m';
-    this.refreshTokenExpiresIn = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
+    this.jwtSecret = config.JWT_SECRET;
+    this.jwtRefreshSecret = config.JWT_REFRESH_SECRET;
+    this.accessTokenExpiresIn = config.JWT_EXPIRES_IN;
+    this.refreshTokenExpiresIn = config.JWT_REFRESH_EXPIRES_IN;
 
     // Email configuration
     this.emailTransporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
-      secure: process.env.SMTP_SECURE === 'true',
+      host: config.SMTP_HOST,
+      port: config.SMTP_PORT,
+      secure: config.SMTP_SECURE,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
+        user: config.SMTP_USER,
+        pass: config.SMTP_PASS,
       },
     });
   }
@@ -86,10 +87,10 @@ export class EnhancedAuthService {
     `;
     await db.query(query, [uuidv4(), userId, token, expiresAt]);
 
-    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    const verificationUrl = `${config.FRONTEND_URL}/verify-email?token=${token}`;
 
     await this.emailTransporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@sbuddy.com',
+      from: config.SMTP_FROM,
       to: email,
       subject: 'Verify Your Email - Sbuddy',
       html: `
@@ -253,10 +254,10 @@ export class EnhancedAuthService {
     `;
     await db.query(query, [uuidv4(), user.id, token, expiresAt]);
 
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    const resetUrl = `${config.FRONTEND_URL}/reset-password?token=${token}`;
 
     await this.emailTransporter.sendMail({
-      from: process.env.SMTP_FROM || 'noreply@sbuddy.com',
+      from: config.SMTP_FROM,
       to: email,
       subject: 'Password Reset - Sbuddy',
       html: `

@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import dotenv from 'dotenv';
+import config from './config/env'; // Validates environment on import
 import passport from './config/passport';
 import session from 'express-session';
 import { initializeDatabase } from './models/database';
@@ -10,15 +10,13 @@ import { createGamificationTables } from './services/gamificationService';
 import routes from './routes';
 import authRoutes from './routes/auth';
 
-dotenv.config();
-
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = config.PORT;
 
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000', 'http://localhost:8080'],
+  origin: config.FRONTEND_URL,
   credentials: true
 }));
 
@@ -32,11 +30,11 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Session middleware for OAuth (required by Passport)
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'fallback-session-secret',
+  secret: config.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // HTTPS only in production
+    secure: config.NODE_ENV === 'production', // HTTPS only in production
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }

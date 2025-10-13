@@ -3,14 +3,15 @@ import jwt from 'jsonwebtoken';
 import { db } from '../models/database';
 import { User } from '../types';
 import { v4 as uuidv4 } from 'uuid';
+import config from '../config/env';
 
 export class AuthService {
   private readonly jwtSecret: string;
   private readonly jwtExpiresIn: string;
 
   constructor() {
-    this.jwtSecret = process.env.JWT_SECRET || 'fallback-secret';
-    this.jwtExpiresIn = process.env.JWT_EXPIRES_IN || '7d';
+    this.jwtSecret = config.JWT_SECRET;
+    this.jwtExpiresIn = config.JWT_EXPIRES_IN;
   }
 
   async register(email: string, password: string, tenantId?: string): Promise<{

@@ -1,17 +1,13 @@
 import Stripe from 'stripe';
 import { db } from '../models/database';
 import authService from './authService';
+import config from '../config/env';
 
 export class PaymentService {
   private stripe: Stripe;
 
   constructor() {
-    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
-    if (!stripeSecretKey) {
-      throw new Error('STRIPE_SECRET_KEY environment variable is required');
-    }
-
-    this.stripe = new Stripe(stripeSecretKey, {
+    this.stripe = new Stripe(config.STRIPE_SECRET_KEY, {
       apiVersion: '2023-10-16'
     });
   }
@@ -114,7 +110,7 @@ export class PaymentService {
     body: string | Buffer,
     signature: string
   ): Promise<void> {
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecret = config.STRIPE_WEBHOOK_SECRET;
     if (!webhookSecret) {
       throw new Error('STRIPE_WEBHOOK_SECRET not configured');
     }

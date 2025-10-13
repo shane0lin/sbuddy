@@ -1,16 +1,14 @@
 import axios from 'axios';
 import { ProblemMatch, Problem } from '../types';
 import problemRepository from './problemRepository';
+import config from '../config/env';
 
 export class ProblemMatcherService {
   private readonly openaiApiKey: string;
   private readonly openaiEndpoint = 'https://api.openai.com/v1/chat/completions';
 
   constructor() {
-    this.openaiApiKey = process.env.OPENAI_API_KEY || '';
-    if (!this.openaiApiKey) {
-      console.warn('OPENAI_API_KEY not set - problem matching will use fallback methods');
-    }
+    this.openaiApiKey = config.OPENAI_API_KEY;
   }
 
   async findMatches(ocrText: string, tenantId: string): Promise<ProblemMatch[]> {
