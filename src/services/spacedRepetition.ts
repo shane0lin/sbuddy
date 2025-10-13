@@ -213,7 +213,7 @@ export class SpacedRepetitionService {
   async deleteCard(userId: string, problemId: string): Promise<boolean> {
     const query = 'DELETE FROM spaced_repetition_cards WHERE user_id = $1 AND problem_id = $2';
     const result = await db.query(query, [userId, problemId]);
-    return result.rowCount > 0;
+    return (result.rowCount || 0) > 0;
   }
 
   async resetCard(userId: string, problemId: string): Promise<SpacedRepetitionCard> {

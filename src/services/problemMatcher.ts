@@ -61,11 +61,11 @@ export class ProblemMatcherService {
       );
 
       const aiResponse = response.data.choices[0].message.content;
-      return this.parseAIResponse(aiResponse, candidates);
+      return await this.parseAIResponse(aiResponse, candidates);
     } catch (error) {
       console.error('AI matching error:', error);
       // Fallback to basic matching
-      return this.basicTextMatching(ocrText, candidates);
+      return await this.basicTextMatching(ocrText, candidates);
     }
   }
 
@@ -94,7 +94,7 @@ export class ProblemMatcherService {
     return prompt;
   }
 
-  private parseAIResponse(aiResponse: string, candidates: Problem[]): ProblemMatch[] {
+  private async parseAIResponse(aiResponse: string, candidates: Problem[]): Promise<ProblemMatch[]> {
     try {
       // Extract JSON from the response
       const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
@@ -116,7 +116,7 @@ export class ProblemMatcherService {
         .sort((a: ProblemMatch, b: ProblemMatch) => b.similarity_score - a.similarity_score);
     } catch (error) {
       console.error('Error parsing AI response:', error);
-      return this.basicTextMatching('', candidates);
+      return await this.basicTextMatching('', candidates);
     }
   }
 

@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
 import authService from '../services/authService';
 
 export interface AuthRequest extends Request {
@@ -10,13 +10,14 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authenticateToken = async (
-  req: AuthRequest,
+export const authenticateToken: RequestHandler = async (
+  req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const authReq = req as AuthRequest;
   try {
-    const authHeader = req.headers.authorization;
+    const authHeader = authReq.headers.authorization;
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
@@ -25,7 +26,7 @@ export const authenticateToken = async (
     }
 
     const decoded = authService.verifyToken(token);
-    req.user = {
+    authReq.user = {
       userId: decoded.userId,
       email: decoded.email,
       tenantId: decoded.tenantId,
@@ -37,15 +38,16 @@ export const authenticateToken = async (
   }
 };
 
-export const requireSubscription = (requiredTier: 'premium' | 'enterprise') => {
-  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const requireSubscription = (requiredTier: 'premium' | 'enterprise'): RequestHandler => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const authReq = req as AuthRequest;
     try {
-      if (!req.user) {
+      if (!authReq.user) {
         res.status(401).json({ error: 'Authentication required' });
         return;
       }
 
-      const user = await authService.getUserById(req.user.userId);
+      const user = await authService.getUserById(authReq.user.userId);
       if (!user) {
         res.status(404).json({ error: 'User not found' });
         return;
@@ -71,19 +73,20 @@ export const requireSubscription = (requiredTier: 'premium' | 'enterprise') => {
   };
 };
 
-export const requireRole = (allowedRoles: string[]) => {
-  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+export const requireRole = (allowedRoles: string[]): RequestHandler => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const authReq = req as AuthRequest;
     try {
-      if (!req.user) {
+      if (!authReq.user) {
         res.status(401).json({ error: 'Authentication required' });
         return;
       }
 
-      if (!allowedRoles.includes(req.user.role)) {
+      if (!allowedRoles.includes(authReq.user.role)) {
         res.status(403).json({
           error: 'Insufficient permissions',
           required_roles: allowedRoles,
-          current_role: req.user.role,
+          current_role: authReq.user.role,
         });
         return;
       }
@@ -95,11 +98,12 @@ export const requireRole = (allowedRoles: string[]) => {
   };
 };
 
-export const rateLimiter = (maxRequests: number, windowMs: number) => {
+export const rateLimiter = (maxRequests: number, windowMs: number): RequestHandler => {
   const requests = new Map<string, { count: number; resetTime: number }>();
 
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const identifier = req.user?.userId || req.ip || 'unknown';
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const authReq = req as AuthRequest;
+    const identifier = authReq.user?.userId || req.ip || 'unknown';
     const now = Date.now();
 
     const userRequests = requests.get(identifier);

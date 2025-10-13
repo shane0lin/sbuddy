@@ -2,24 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import enhancedAuthService from '../services/enhancedAuthService';
 
-// Type definition for passport-apple
-declare module 'passport-apple' {
-  export interface AppleStrategyOptions {
-    clientID: string;
-    teamID: string;
-    keyID: string;
-    key: string;
-    callbackURL: string;
-    scope?: string[];
-  }
-  export default class AppleStrategy {
-    constructor(
-      options: AppleStrategyOptions,
-      verify: (accessToken: any, refreshToken: any, idToken: any, profile: any, done: any) => void
-    );
-  }
-}
-
+// Import passport-apple without types (package doesn't have TypeScript definitions)
 const AppleStrategy = require('passport-apple');
 
 // Google OAuth Strategy

@@ -23,33 +23,33 @@ router.post('/ocr/process',
   authenticateToken,
   rateLimiter(10, 60000), // 10 requests per minute
   ocrController.uploadMiddleware,
-  ocrController.processImage
+  (req: any, res) => ocrController.processImage(req, res)
 );
 
 router.post('/ocr/process-buffer',
   authenticateToken,
   rateLimiter(10, 60000),
-  ocrController.processImageBuffer
+  (req: any, res) => ocrController.processImageBuffer(req, res)
 );
 
 router.get('/ocr/health', ocrController.healthCheck);
 
 // Problem routes
-router.post('/problems', authenticateToken, problemController.createProblem);
-router.get('/problems/search', authenticateToken, problemController.searchProblems);
-router.get('/problems/statistics', authenticateToken, problemController.getStatistics);
-router.get('/problems/:id', authenticateToken, problemController.getProblem);
-router.put('/problems/:id', authenticateToken, problemController.updateProblem);
-router.delete('/problems/:id', authenticateToken, problemController.deleteProblem);
-router.post('/problems/:id/answer', authenticateToken, problemController.submitAnswer);
-router.post('/problems/:id/study', authenticateToken, problemController.addToStudySet);
-router.get('/problems/:id/similar', authenticateToken, problemController.getSimilarProblems);
+router.post('/problems', authenticateToken, (req: any, res) => problemController.createProblem(req, res));
+router.get('/problems/search', authenticateToken, (req: any, res) => problemController.searchProblems(req, res));
+router.get('/problems/statistics', authenticateToken, (req: any, res) => problemController.getStatistics(req, res));
+router.get('/problems/:id', authenticateToken, (req: any, res) => problemController.getProblem(req, res));
+router.put('/problems/:id', authenticateToken, (req: any, res) => problemController.updateProblem(req, res));
+router.delete('/problems/:id', authenticateToken, (req: any, res) => problemController.deleteProblem(req, res));
+router.post('/problems/:id/answer', authenticateToken, (req: any, res) => problemController.submitAnswer(req, res));
+router.post('/problems/:id/study', authenticateToken, (req: any, res) => problemController.addToStudySet(req, res));
+router.get('/problems/:id/similar', authenticateToken, (req: any, res) => problemController.getSimilarProblems(req, res));
 
 // Bulk operations (premium feature)
 router.post('/problems/bulk-import',
   authenticateToken,
   requireSubscription('premium'),
-  problemController.bulkImport
+  (req: any, res) => problemController.bulkImport(req, res)
 );
 
 // Study system routes
