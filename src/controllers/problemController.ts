@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import problemRepository from '../services/problemRepository';
+import bulkImportService from '../services/bulkImportService';
 import spacedRepetition from '../services/spacedRepetition';
 import gamificationService from '../services/gamificationService';
 import { AuthRequest } from '../middleware/auth';
@@ -244,6 +245,89 @@ export class ProblemController {
         message: `${importedProblems.length} problems imported successfully`,
         problems: importedProblems
       });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Import from CSV
+   * POST /problems/import/csv
+   */
+  async importCSV(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { csv_content, validate_only } = req.body;
+
+      if (!csv_content) {
+        res.status(400).json({ error: 'csv_content is required' });
+        return;
+      }
+
+      const result = await bulkImportService.importFromCSV(
+        csv_content,
+        req.user!.tenantId,
+        validate_only || false
+      );
+
+      res.status(result.success ? 200 : 400).json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Import from JSON
+   * POST /problems/import/json
+   */
+  async importJSON(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const { json_content, validate_only } = req.body;
+
+      if (!json_content) {
+        res.status(400).json({ error: 'json_content is required' });
+        return;
+      }
+
+      const jsonString = typeof json_content === 'string'
+        ? json_content
+        : JSON.stringify(json_content);
+
+      const result = await bulkImportService.importFromJSON(
+        jsonString,
+        req.user!.tenantId,
+        validate_only || false
+      );
+
+      res.status(result.success ? 200 : 400).json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Get CSV template
+   * GET /problems/import/template
+   */
+  async getImportTemplate(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const template = bulkImportService.generateCSVTemplate();
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename="problems_template.csv"');
+      res.send(template);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Get import history
+   * GET /problems/import/history
+   */
+  async getImportHistory(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const history = await bulkImportService.getImportHistory(req.user!.tenantId, limit);
+      res.json({ history, count: history.length });
     } catch (error: any) {
       res.status(500).json({ error: error.message });
     }

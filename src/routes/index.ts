@@ -61,6 +61,29 @@ router.post('/problems/bulk-import',
   (req: any, res) => problemController.bulkImport(req, res)
 );
 
+// Enhanced bulk import endpoints
+router.post('/problems/import/csv',
+  authenticateToken,
+  requireSubscription('premium'),
+  (req: any, res) => problemController.importCSV(req, res)
+);
+
+router.post('/problems/import/json',
+  authenticateToken,
+  requireSubscription('premium'),
+  (req: any, res) => problemController.importJSON(req, res)
+);
+
+router.get('/problems/import/template',
+  authenticateToken,
+  (req: any, res) => problemController.getImportTemplate(req, res)
+);
+
+router.get('/problems/import/history',
+  authenticateToken,
+  (req: any, res) => problemController.getImportHistory(req, res)
+);
+
 // Study Sets routes
 router.post('/study-sets', authenticateToken, (req: any, res) => studySetController.createStudySet(req, res));
 router.get('/study-sets', authenticateToken, (req: any, res) => studySetController.getUserStudySets(req, res));
