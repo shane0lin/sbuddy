@@ -6,6 +6,7 @@ export interface AuthRequest extends Request {
     userId: string;
     email: string;
     tenantId: string;
+    role: string;
   };
 }
 
@@ -24,7 +25,12 @@ export const authenticateToken = async (
     }
 
     const decoded = authService.verifyToken(token);
-    req.user = decoded;
+    req.user = {
+      userId: decoded.userId,
+      email: decoded.email,
+      tenantId: decoded.tenantId,
+      role: decoded.role || 'user',
+    };
     next();
   } catch (error) {
     res.status(403).json({ error: 'Invalid or expired token' });
@@ -65,11 +71,35 @@ export const requireSubscription = (requiredTier: 'premium' | 'enterprise') => {
   };
 };
 
+export const requireRole = (allowedRoles: string[]) => {
+  return async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      if (!allowedRoles.includes(req.user.role)) {
+        res.status(403).json({
+          error: 'Insufficient permissions',
+          required_roles: allowedRoles,
+          current_role: req.user.role,
+        });
+        return;
+      }
+
+      next();
+    } catch (error) {
+      res.status(500).json({ error: 'Authorization check failed' });
+    }
+  };
+};
+
 export const rateLimiter = (maxRequests: number, windowMs: number) => {
   const requests = new Map<string, { count: number; resetTime: number }>();
 
   return (req: AuthRequest, res: Response, next: NextFunction): void => {
-    const identifier = req.user?.userId || req.ip;
+    const identifier = req.user?.userId || req.ip || 'unknown';
     const now = Date.now();
 
     const userRequests = requests.get(identifier);

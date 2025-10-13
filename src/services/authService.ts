@@ -50,7 +50,7 @@ export class AuthService {
     token: string;
   }> {
     const user = await this.getUserByEmail(email);
-    if (!user) {
+    if (!user || !user.password_hash) {
       throw new Error('Invalid credentials');
     }
 
@@ -103,7 +103,7 @@ export class AuthService {
 
   async changePassword(id: string, oldPassword: string, newPassword: string): Promise<void> {
     const user = await this.getUserByEmailWithPassword(id);
-    if (!user) {
+    if (!user || !user.password_hash) {
       throw new Error('User not found');
     }
 
@@ -124,21 +124,22 @@ export class AuthService {
     return result.rows[0] || null;
   }
 
-  private generateToken(userId: string, email: string, tenantId: string): string {
+  private generateToken(userId: string, email: string, tenantId: string, role: string = 'user'): string {
     return jwt.sign(
-      { userId, email, tenantId },
+      { userId, email, tenantId, role },
       this.jwtSecret,
       { expiresIn: this.jwtExpiresIn } as jwt.SignOptions
     );
   }
 
-  verifyToken(token: string): { userId: string; email: string; tenantId: string } {
+  verifyToken(token: string): { userId: string; email: string; tenantId: string; role: string } {
     try {
       const decoded = jwt.verify(token, this.jwtSecret) as any;
       return {
         userId: decoded.userId,
         email: decoded.email,
-        tenantId: decoded.tenantId
+        tenantId: decoded.tenantId,
+        role: decoded.role || 'user'
       };
     } catch (error) {
       throw new Error('Invalid token');

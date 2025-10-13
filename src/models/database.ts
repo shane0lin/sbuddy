@@ -47,9 +47,15 @@ const createTables = async () => {
     `CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
       email VARCHAR(255) UNIQUE NOT NULL,
-      password_hash VARCHAR(255) NOT NULL,
+      password_hash VARCHAR(255),
       subscription_tier VARCHAR(50) DEFAULT 'free',
       tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
+      email_verified BOOLEAN DEFAULT FALSE,
+      oauth_provider VARCHAR(50),
+      oauth_id VARCHAR(255),
+      role VARCHAR(50) DEFAULT 'user',
+      two_factor_secret VARCHAR(255),
+      two_factor_enabled BOOLEAN DEFAULT FALSE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );`,
@@ -110,11 +116,40 @@ const createTables = async () => {
       UNIQUE(user_id, problem_id)
     );`,
 
+    `CREATE TABLE IF NOT EXISTS refresh_tokens (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      token VARCHAR(500) UNIQUE NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );`,
+
+    `CREATE TABLE IF NOT EXISTS email_verification_tokens (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      token VARCHAR(500) UNIQUE NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );`,
+
+    `CREATE TABLE IF NOT EXISTS password_reset_tokens (
+      id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      token VARCHAR(500) UNIQUE NOT NULL,
+      expires_at TIMESTAMP NOT NULL,
+      used BOOLEAN DEFAULT FALSE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );`,
+
     `CREATE INDEX IF NOT EXISTS idx_problems_tenant ON problems(tenant_id);`,
     `CREATE INDEX IF NOT EXISTS idx_problems_category ON problems(category);`,
     `CREATE INDEX IF NOT EXISTS idx_problems_exam ON problems(exam_type, exam_year);`,
     `CREATE INDEX IF NOT EXISTS idx_user_progress_user ON user_progress(user_id);`,
-    `CREATE INDEX IF NOT EXISTS idx_spaced_repetition_next_review ON spaced_repetition_cards(next_review);`
+    `CREATE INDEX IF NOT EXISTS idx_spaced_repetition_next_review ON spaced_repetition_cards(next_review);`,
+    `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
+    `CREATE INDEX IF NOT EXISTS idx_users_oauth ON users(oauth_provider, oauth_id);`,
+    `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);`,
+    `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);`
   ];
 
   for (const query of queries) {

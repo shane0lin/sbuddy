@@ -1,11 +1,42 @@
 export interface User {
   id: string;
   email: string;
-  password_hash: string;
+  password_hash?: string;
   subscription_tier: 'free' | 'premium' | 'enterprise';
   tenant_id: string;
+  email_verified: boolean;
+  oauth_provider?: 'google' | 'apple';
+  oauth_id?: string;
+  role: 'user' | 'admin' | 'moderator';
+  two_factor_secret?: string;
+  two_factor_enabled: boolean;
   created_at: Date;
   updated_at: Date;
+}
+
+export interface RefreshToken {
+  id: string;
+  user_id: string;
+  token: string;
+  expires_at: Date;
+  created_at: Date;
+}
+
+export interface EmailVerificationToken {
+  id: string;
+  user_id: string;
+  token: string;
+  expires_at: Date;
+  created_at: Date;
+}
+
+export interface PasswordResetToken {
+  id: string;
+  user_id: string;
+  token: string;
+  expires_at: Date;
+  used: boolean;
+  created_at: Date;
 }
 
 export interface Problem {
