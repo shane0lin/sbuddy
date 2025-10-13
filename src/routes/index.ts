@@ -2,6 +2,7 @@ import { Router } from 'express';
 import authController from '../controllers/authController';
 import ocrController from '../controllers/ocrController';
 import problemController from '../controllers/problemController';
+import studySetController from '../controllers/studySetController';
 import { authenticateToken, requireSubscription, rateLimiter } from '../middleware/auth';
 
 const router = Router();
@@ -59,6 +60,20 @@ router.post('/problems/bulk-import',
   requireSubscription('premium'),
   (req: any, res) => problemController.bulkImport(req, res)
 );
+
+// Study Sets routes
+router.post('/study-sets', authenticateToken, (req: any, res) => studySetController.createStudySet(req, res));
+router.get('/study-sets', authenticateToken, (req: any, res) => studySetController.getUserStudySets(req, res));
+router.get('/study-sets/public', authenticateToken, (req: any, res) => studySetController.getPublicStudySets(req, res));
+router.get('/study-sets/:id', authenticateToken, (req: any, res) => studySetController.getStudySet(req, res));
+router.put('/study-sets/:id', authenticateToken, (req: any, res) => studySetController.updateStudySet(req, res));
+router.delete('/study-sets/:id', authenticateToken, (req: any, res) => studySetController.deleteStudySet(req, res));
+router.get('/study-sets/:id/problems', authenticateToken, (req: any, res) => studySetController.getStudySetProblems(req, res));
+router.post('/study-sets/:id/problems', authenticateToken, (req: any, res) => studySetController.addProblem(req, res));
+router.delete('/study-sets/:id/problems/:problemId', authenticateToken, (req: any, res) => studySetController.removeProblem(req, res));
+router.post('/study-sets/:id/problems/bulk', authenticateToken, (req: any, res) => studySetController.bulkAddProblems(req, res));
+router.get('/study-sets/:id/stats', authenticateToken, (req: any, res) => studySetController.getStats(req, res));
+router.post('/study-sets/:id/clone', authenticateToken, (req: any, res) => studySetController.cloneStudySet(req, res));
 
 // Study system routes
 router.get('/study/due-cards', authenticateToken, async (req: any, res) => {

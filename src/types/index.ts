@@ -81,6 +81,25 @@ export interface StudySession {
   created_at: Date;
 }
 
+export interface StudySet {
+  id: string;
+  user_id: string;
+  name: string;
+  description?: string;
+  is_public: boolean;
+  tags: string[];
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface StudySetProblem {
+  id: string;
+  study_set_id: string;
+  problem_id: string;
+  added_at: Date;
+  custom_notes?: string;
+}
+
 export interface OCRResult {
   success: boolean;
   text: string;
