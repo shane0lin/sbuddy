@@ -250,16 +250,38 @@
     <script src="studyPlan.js"></script>
     <script>
         let allProblems = [];
+        let problemsWithTest = []; // Store problems with their test file info
 
         async function loadProblems() {
             try {
-                const response = await fetch('../../crawled_data/amc_2012_10a_problems.json');
-                const data = await response.json();
-                allProblems = data.problems;
+                // Load index to get all tests
+                const indexResponse = await fetch('../../crawled_data/amc_index.json');
+                const indexData = await indexResponse.json();
+
+                // Load all test files
+                const testPromises = indexData.tests.map(async (test) => {
+                    const response = await fetch(`../../${test.filePath}`);
+                    const data = await response.json();
+                    // Tag each problem with its test file
+                    return data.problems.map(p => ({
+                        ...p,
+                        testFile: test.filePath.split('/').pop(),
+                        testName: `${test.year} ${test.test}`
+                    }));
+                });
+
+                const allTestProblems = await Promise.all(testPromises);
+                problemsWithTest = allTestProblems.flat();
+
+                // For backward compatibility, also create allProblems without test info
+                allProblems = problemsWithTest;
+
                 renderStudyPlan();
                 loadPlanList();
             } catch (error) {
                 console.error('Error loading problems:', error);
+                document.getElementById('problemList').innerHTML =
+                    '<div class="error">Error loading problems. Make sure you have crawled some tests.</div>';
             }
         }
 
@@ -279,15 +301,32 @@
                 return;
             }
 
-            const problemsInPlan = allProblems.filter(p => plan.problems.includes(p.problemNumber));
+            // Filter problems to match both problem number AND test file
+            const problemsInPlan = allProblems.filter(p => {
+                return plan.problems.some(planProblem => {
+                    // Handle old format (just numbers)
+                    if (typeof planProblem === 'number') {
+                        return planProblem === p.problemNumber;
+                    }
+                    // Handle new format ({testFile, problemNumber})
+                    if (typeof planProblem === 'object' && planProblem.problemNumber) {
+                        return planProblem.problemNumber === p.problemNumber &&
+                               planProblem.testFile === p.testFile;
+                    }
+                    return false;
+                });
+            });
 
             const html = problemsInPlan.map(problem => `
                 <div class="problem-card">
                     <div class="problem-header">
-                        <a href="problem.html?number=${problem.problemNumber}" class="problem-number-link">
-                            Problem ${problem.problemNumber}
-                        </a>
-                        <button class="remove-btn" onclick="removeProblem(${problem.problemNumber})">
+                        <div>
+                            <a href="problem.html?number=${problem.problemNumber}&test=${problem.testFile || 'amc_2012_10a_problems.json'}" class="problem-number-link">
+                                Problem ${problem.problemNumber}
+                            </a>
+                            ${problem.testName ? `<span style="color: #6c757d; font-size: 0.9rem; margin-left: 10px;">(${problem.testName})</span>` : ''}
+                        </div>
+                        <button class="remove-btn" onclick="removeProblem(${problem.problemNumber}, '${problem.testFile || ''}')">
                             ✕ Remove
                         </button>
                     </div>
@@ -357,8 +396,8 @@
             }
         }
 
-        function removeProblem(problemNumber) {
-            window.studyPlanManager.removeProblem(problemNumber);
+        function removeProblem(problemNumber, testFile) {
+            window.studyPlanManager.removeProblem(problemNumber, testFile);
             renderStudyPlan();
         }
 

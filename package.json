@@ -19,6 +19,7 @@
     "scrape-amc:demo": "ts-node scripts/demoScraper.ts",
     "scrape-amc:quick": "ts-node scripts/demoScraper.ts --quick",
     "crawl:2012-amc10a": "ts-node scripts/crawl2012AMC10A.ts",
+    "crawl:all-amc10": "ts-node scripts/crawlAllAMC10.ts",
     "view:crawled": "ts-node scripts/viewCrawledData.ts",
     "serve:viewer": "ts-node scripts/serveViewer.ts"
   },

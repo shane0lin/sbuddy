@@ -88,33 +88,73 @@ class StudyPlanManager {
     }
 
     // Check if problem is in active plan
-    isProblemInPlan(problemNumber) {
+    // Supports both old format (just number) and new format ({testFile, problemNumber})
+    isProblemInPlan(problemNumber, testFile = null) {
         const plan = this.getActivePlan();
-        return plan.problems.includes(problemNumber);
+        if (!plan.problems) return false;
+
+        return plan.problems.some(p => {
+            // Old format: just a number
+            if (typeof p === 'number') {
+                return p === problemNumber;
+            }
+            // New format: {testFile, problemNumber}
+            if (typeof p === 'object' && p.problemNumber) {
+                const numberMatch = p.problemNumber === problemNumber;
+                if (!testFile) return numberMatch;
+                return numberMatch && p.testFile === testFile;
+            }
+            return false;
+        });
     }
 
-    // Add problem to active plan
-    addProblem(problemNumber) {
+    // Add problem to active plan (new format with testFile)
+    addProblem(problemNumber, testFile = 'amc_2012_10a_problems.json') {
         const plans = this.getPlans();
         const activePlanId = this.getActivePlanId();
         const plan = plans[activePlanId];
 
-        if (!plan.problems.includes(problemNumber)) {
-            plan.problems.push(problemNumber);
-            plan.problems.sort((a, b) => a - b); // Keep sorted
-            this.savePlans(plans);
-            return true;
+        // Check if already exists
+        if (this.isProblemInPlan(problemNumber, testFile)) {
+            return false;
         }
-        return false;
+
+        // Store as object with testFile and problemNumber
+        plan.problems.push({ testFile, problemNumber });
+
+        // Sort by test file then by problem number
+        plan.problems.sort((a, b) => {
+            const aTest = typeof a === 'object' ? a.testFile : '';
+            const bTest = typeof b === 'object' ? b.testFile : '';
+            const aNum = typeof a === 'object' ? a.problemNumber : a;
+            const bNum = typeof b === 'object' ? b.problemNumber : b;
+
+            if (aTest !== bTest) return aTest.localeCompare(bTest);
+            return aNum - bNum;
+        });
+
+        this.savePlans(plans);
+        return true;
     }
 
     // Remove problem from active plan
-    removeProblem(problemNumber) {
+    removeProblem(problemNumber, testFile = null) {
         const plans = this.getPlans();
         const activePlanId = this.getActivePlanId();
         const plan = plans[activePlanId];
 
-        const index = plan.problems.indexOf(problemNumber);
+        const index = plan.problems.findIndex(p => {
+            if (typeof p === 'number') {
+                return p === problemNumber;
+            }
+            if (typeof p === 'object' && p.problemNumber) {
+                const numberMatch = p.problemNumber === problemNumber;
+                if (!testFile) return numberMatch;
+                return numberMatch && p.testFile === testFile;
+            }
+            return false;
+        });
+
         if (index > -1) {
             plan.problems.splice(index, 1);
             this.savePlans(plans);
@@ -124,12 +164,12 @@ class StudyPlanManager {
     }
 
     // Toggle problem in active plan
-    toggleProblem(problemNumber) {
-        if (this.isProblemInPlan(problemNumber)) {
-            this.removeProblem(problemNumber);
+    toggleProblem(problemNumber, testFile = 'amc_2012_10a_problems.json') {
+        if (this.isProblemInPlan(problemNumber, testFile)) {
+            this.removeProblem(problemNumber, testFile);
             return false;
         } else {
-            this.addProblem(problemNumber);
+            this.addProblem(problemNumber, testFile);
             return true;
         }
     }

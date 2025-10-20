@@ -408,6 +408,7 @@
         async function loadProblem() {
             const urlParams = new URLSearchParams(window.location.search);
             const problemNumber = parseInt(urlParams.get('number'));
+            const testFile = urlParams.get('test') || 'amc_2012_10a_problems.json'; // Default to 2012 10A
 
             if (!problemNumber) {
                 document.getElementById('content').innerHTML =
@@ -416,7 +417,7 @@
             }
 
             try {
-                const response = await fetch('../../crawled_data/amc_2012_10a_problems.json');
+                const response = await fetch(`../../crawled_data/${testFile}`);
                 const data = await response.json();
                 allProblems = data.problems;
 
@@ -426,8 +427,12 @@
                     throw new Error('Problem not found');
                 }
 
+                // Update page title
+                document.getElementById('problemTitle').textContent =
+                    `${data.metadata.year} ${data.metadata.test} - Problem ${problemNumber}`;
+
                 displayProblem(currentProblem);
-                setupNavigation(problemNumber);
+                setupNavigation(problemNumber, testFile);
             } catch (error) {
                 document.getElementById('content').innerHTML =
                     '<div class="error">Error loading problem: ' + error.message + '</div>';
@@ -572,24 +577,27 @@
             }
         }
 
-        function setupNavigation(currentNumber) {
+        function setupNavigation(currentNumber, testFile) {
             const prevBtn = document.getElementById('prevBtn');
             const nextBtn = document.getElementById('nextBtn');
             const nav = document.getElementById('navigation');
 
             nav.style.display = 'flex';
 
+            const maxProblem = allProblems.length;
             prevBtn.disabled = currentNumber === 1;
-            nextBtn.disabled = currentNumber === 25;
+            nextBtn.disabled = currentNumber === maxProblem;
         }
 
         function navigate(direction) {
             const urlParams = new URLSearchParams(window.location.search);
             const currentNumber = parseInt(urlParams.get('number'));
+            const testFile = urlParams.get('test') || 'amc_2012_10a_problems.json';
             const newNumber = currentNumber + direction;
 
-            if (newNumber >= 1 && newNumber <= 25) {
-                window.location.href = `problem.html?number=${newNumber}`;
+            const maxProblem = allProblems.length;
+            if (newNumber >= 1 && newNumber <= maxProblem) {
+                window.location.href = `problem.html?number=${newNumber}&test=${testFile}`;
             }
         }
 
@@ -603,9 +611,10 @@
         function updateStudyPlanButton() {
             const urlParams = new URLSearchParams(window.location.search);
             const problemNumber = parseInt(urlParams.get('number'));
+            const testFile = urlParams.get('test') || 'amc_2012_10a_problems.json';
 
             if (problemNumber) {
-                const inPlan = window.studyPlanManager.isProblemInPlan(problemNumber);
+                const inPlan = window.studyPlanManager.isProblemInPlan(problemNumber, testFile);
                 const btn = document.getElementById('addToPlanBtn');
                 btn.className = 'add-to-plan-btn' + (inPlan ? ' in-plan' : '');
                 btn.textContent = inPlan ? '✓ In Study Plan' : '+ Add to Study Plan';
@@ -615,9 +624,10 @@
         function toggleStudyPlan() {
             const urlParams = new URLSearchParams(window.location.search);
             const problemNumber = parseInt(urlParams.get('number'));
+            const testFile = urlParams.get('test') || 'amc_2012_10a_problems.json';
 
             if (problemNumber) {
-                window.studyPlanManager.toggleProblem(problemNumber);
+                window.studyPlanManager.toggleProblem(problemNumber, testFile);
                 updateStudyPlanButton();
             }
         }

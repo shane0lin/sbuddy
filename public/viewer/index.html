@@ -445,7 +445,14 @@
                 </a>
             </div>
             <h1>AMC Problems Viewer</h1>
-            <p>2012 AMC 10A - Interactive Problem Browser</p>
+            <p id="testDescription">Interactive Problem Browser</p>
+        </div>
+
+        <div class="test-selector-section" style="background: #f8f9fa; padding: 20px; margin: 20px 40px; border-radius: 12px;">
+            <label for="testSelector" style="font-weight: 600; margin-right: 10px;">Select Test:</label>
+            <select id="testSelector" onchange="switchTest()" style="padding: 10px; border: 2px solid #667eea; border-radius: 8px; font-size: 1rem; min-width: 200px;">
+                <option value="">Loading tests...</option>
+            </select>
         </div>
 
         <div class="metadata" id="metadata">
@@ -469,23 +476,77 @@
     <script>
         let allProblems = [];
         let currentFilter = 'all';
+        let availableTests = [];
+        let currentTest = null;
 
-        // Load data
-        async function loadData() {
+        // Load index and populate test selector
+        async function loadIndex() {
             try {
-                const response = await fetch('../../crawled_data/amc_2012_10a_problems.json');
+                const response = await fetch('../../crawled_data/amc_index.json');
+                const indexData = await response.json();
+                availableTests = indexData.tests;
+
+                // Populate test selector
+                const selector = document.getElementById('testSelector');
+                selector.innerHTML = availableTests.map((test, index) =>
+                    `<option value="${index}">${test.year} ${test.test} (${test.problemCount} problems)</option>`
+                ).join('');
+
+                // Load first test by default
+                if (availableTests.length > 0) {
+                    currentTest = availableTests[0];
+                    await loadTest(currentTest);
+                }
+            } catch (error) {
+                console.error('Error loading index:', error);
+                document.getElementById('testSelector').innerHTML =
+                    '<option value="">Error loading tests</option>';
+            }
+        }
+
+        // Load a specific test
+        async function loadTest(test) {
+            try {
+                const response = await fetch(`../../${test.filePath}`);
                 const data = await response.json();
+
+                // Update header
+                document.getElementById('testDescription').textContent =
+                    `${test.year} ${test.test} - Interactive Problem Browser`;
 
                 displayMetadata(data.metadata, data.problems);
                 allProblems = data.problems;
+                currentFilter = 'all';
+
+                // Reset filter buttons
+                document.querySelectorAll('.filter-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.filter === 'all') btn.classList.add('active');
+                });
+
                 displayProblems(allProblems);
                 setupFilters();
             } catch (error) {
                 document.getElementById('metadata').innerHTML =
-                    '<div class="error">Error loading data: ' + error.message + '</div>';
+                    '<div class="error">Error loading test data: ' + error.message + '</div>';
                 document.getElementById('problemsList').innerHTML =
                     '<div class="error">Failed to load problems</div>';
             }
+        }
+
+        // Switch test when selector changes
+        async function switchTest() {
+            const selector = document.getElementById('testSelector');
+            const testIndex = parseInt(selector.value);
+            if (testIndex >= 0 && testIndex < availableTests.length) {
+                currentTest = availableTests[testIndex];
+                await loadTest(currentTest);
+            }
+        }
+
+        // Initialize - load index first
+        async function loadData() {
+            await loadIndex();
         }
 
         function displayMetadata(metadata, problems) {
@@ -528,8 +589,10 @@
         }
 
         function displayProblems(problems) {
+            const testFile = currentTest ? currentTest.filePath.split('/').pop() : 'amc_2012_10a_problems.json';
+
             const html = problems.map(problem => {
-                const inPlan = window.studyPlanManager.isProblemInPlan(problem.problemNumber);
+                const inPlan = window.studyPlanManager.isProblemInPlan(problem.problemNumber, testFile);
                 return `
                 <div class="problem-card">
                     <div class="problem-number" onclick="viewProblem(${problem.problemNumber})">${problem.problemNumber}</div>
@@ -559,7 +622,8 @@
         }
 
         function toggleStudyPlan(problemNumber, button) {
-            const inPlan = window.studyPlanManager.toggleProblem(problemNumber);
+            const testFile = currentTest ? currentTest.filePath.split('/').pop() : 'amc_2012_10a_problems.json';
+            const inPlan = window.studyPlanManager.toggleProblem(problemNumber, testFile);
             button.className = 'add-to-plan-btn' + (inPlan ? ' in-plan' : '');
             button.textContent = inPlan ? '✓ In Study Plan' : '+ Add to Study Plan';
             updatePlanCount();
@@ -586,7 +650,8 @@
         }
 
         function viewProblem(problemNumber) {
-            window.location.href = `problem.html?number=${problemNumber}`;
+            const testFile = currentTest ? currentTest.filePath.split('/').pop() : 'amc_2012_10a_problems.json';
+            window.location.href = `problem.html?number=${problemNumber}&test=${testFile}`;
         }
 
         // Load data on page load
