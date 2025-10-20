@@ -264,11 +264,186 @@
                 font-size: 1.2rem;
             }
         }
+
+        /* Study Plan Styles */
+        .study-plan-header {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .plan-selector-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .plan-dropdown-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 200px;
+            justify-content: space-between;
+        }
+
+        .plan-dropdown-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .plan-dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            margin-top: 5px;
+            background: white;
+            min-width: 220px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            z-index: 1000;
+            overflow: hidden;
+        }
+
+        .plan-dropdown-content.show {
+            display: block;
+        }
+
+        .plan-option {
+            padding: 12px 16px;
+            cursor: pointer;
+            color: #333;
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .plan-option:hover {
+            background: #f8f9fa;
+        }
+
+        .plan-option.active {
+            background: #e7f3ff;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .plan-count-badge {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .plan-option.active .plan-count-badge {
+            background: white;
+            color: #667eea;
+        }
+
+        .plan-divider {
+            height: 1px;
+            background: #dee2e6;
+            margin: 5px 0;
+        }
+
+        .plan-action {
+            padding: 12px 16px;
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .plan-action:hover {
+            background: #f8f9fa;
+        }
+
+        .study-plan-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .study-plan-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .study-plan-count {
+            background: white;
+            color: #667eea;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 700;
+        }
+
+        .add-to-plan-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .add-to-plan-btn:hover {
+            background: #218838;
+        }
+
+        .add-to-plan-btn.in-plan {
+            background: #6c757d;
+        }
+
+        .add-to-plan-btn.in-plan:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <div class="header" style="position: relative;">
+            <div class="study-plan-header">
+                <div class="plan-selector-dropdown">
+                    <button class="plan-dropdown-btn" onclick="togglePlanDropdown()">
+                        <span id="currentPlanName">My Study Plan</span>
+                        <span>▼</span>
+                    </button>
+                    <div class="plan-dropdown-content" id="planDropdown">
+                        <!-- Plans will be loaded here -->
+                    </div>
+                </div>
+                <a href="studyPlan.html" class="study-plan-btn" id="viewStudyPlanBtn">
+                    📚 View Plan
+                    <span class="study-plan-count" id="planCount">0</span>
+                </a>
+            </div>
             <h1>AMC Problems Viewer</h1>
             <p>2012 AMC 10A - Interactive Problem Browser</p>
         </div>
@@ -353,10 +528,12 @@
         }
 
         function displayProblems(problems) {
-            const html = problems.map(problem => `
-                <div class="problem-card" onclick="viewProblem(${problem.problemNumber})">
-                    <div class="problem-number">${problem.problemNumber}</div>
-                    <div class="problem-content">
+            const html = problems.map(problem => {
+                const inPlan = window.studyPlanManager.isProblemInPlan(problem.problemNumber);
+                return `
+                <div class="problem-card">
+                    <div class="problem-number" onclick="viewProblem(${problem.problemNumber})">${problem.problemNumber}</div>
+                    <div class="problem-content" onclick="viewProblem(${problem.problemNumber})">
                         <div class="problem-header">
                             <div class="problem-title">Problem ${problem.problemNumber}</div>
                             <div class="difficulty-badge ${problem.difficulty}">${problem.difficulty}</div>
@@ -370,10 +547,22 @@
                             ${problem.topics?.length ? `<span>🏷️ ${problem.topics.length} topics</span>` : ''}
                         </div>
                     </div>
+                    <button class="add-to-plan-btn ${inPlan ? 'in-plan' : ''}"
+                            onclick="event.stopPropagation(); toggleStudyPlan(${problem.problemNumber}, this)">
+                        ${inPlan ? '✓ In Study Plan' : '+ Add to Study Plan'}
+                    </button>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
             document.getElementById('problemsList').innerHTML = html || '<div class="loading">No problems found</div>';
+        }
+
+        function toggleStudyPlan(problemNumber, button) {
+            const inPlan = window.studyPlanManager.toggleProblem(problemNumber);
+            button.className = 'add-to-plan-btn' + (inPlan ? ' in-plan' : '');
+            button.textContent = inPlan ? '✓ In Study Plan' : '+ Add to Study Plan';
+            updatePlanCount();
         }
 
         function setupFilters() {
@@ -402,6 +591,98 @@
 
         // Load data on page load
         loadData();
+    </script>
+
+    <!-- Study Plan Management -->
+    <script src="studyPlan.js"></script>
+    <script>
+        // Update study plan count on page load
+        function updatePlanCount() {
+            const count = window.studyPlanManager.getProblemCount();
+            document.getElementById('planCount').textContent = count;
+
+            // Update current plan name
+            const plan = window.studyPlanManager.getActivePlan();
+            document.getElementById('currentPlanName').textContent = plan.name;
+
+            // Load plan list in dropdown
+            loadPlanDropdown();
+        }
+
+        function loadPlanDropdown() {
+            const plans = window.studyPlanManager.getPlans();
+            const activePlanId = window.studyPlanManager.getActivePlanId();
+            const dropdown = document.getElementById('planDropdown');
+
+            const planOptions = Object.values(plans).map(plan => {
+                const count = plan.problems.length;
+                const isActive = plan.id === activePlanId;
+                return `
+                    <div class="plan-option ${isActive ? 'active' : ''}" onclick="switchPlan('${plan.id}')">
+                        <span>${plan.name}</span>
+                        <span class="plan-count-badge">${count}</span>
+                    </div>
+                `;
+            }).join('');
+
+            dropdown.innerHTML = `
+                ${planOptions}
+                <div class="plan-divider"></div>
+                <div class="plan-action" onclick="createNewPlan()">➕ New Plan</div>
+            `;
+        }
+
+        function togglePlanDropdown() {
+            const dropdown = document.getElementById('planDropdown');
+            dropdown.classList.toggle('show');
+        }
+
+        function switchPlan(planId) {
+            window.studyPlanManager.setActivePlan(planId);
+            togglePlanDropdown();
+            updatePlanCount();
+
+            // Refresh the problem list to show correct "in plan" status
+            if (typeof allProblems !== 'undefined' && allProblems.length > 0) {
+                const filtered = currentFilter === 'all'
+                    ? allProblems
+                    : allProblems.filter(p => p.difficulty === currentFilter);
+                displayProblems(filtered);
+            }
+        }
+
+        function createNewPlan() {
+            const name = prompt('Enter name for new study plan:');
+            if (name) {
+                window.studyPlanManager.createPlan(name);
+                togglePlanDropdown();
+                updatePlanCount();
+
+                // Refresh the problem list to show correct "in plan" status for new plan
+                if (typeof allProblems !== 'undefined' && allProblems.length > 0) {
+                    const filtered = currentFilter === 'all'
+                        ? allProblems
+                        : allProblems.filter(p => p.difficulty === currentFilter);
+                    displayProblems(filtered);
+                }
+            }
+        }
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', (e) => {
+            if (!e.target.matches('.plan-dropdown-btn') && !e.target.matches('.plan-dropdown-btn *')) {
+                const dropdown = document.getElementById('planDropdown');
+                if (dropdown.classList.contains('show')) {
+                    dropdown.classList.remove('show');
+                }
+            }
+        });
+
+        // Update count when page loads
+        updatePlanCount();
+
+        // Update count after adding/removing problems
+        window.addEventListener('storage', updatePlanCount);
     </script>
 </body>
 </html>

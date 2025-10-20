@@ -300,6 +300,59 @@
             margin-top: 15px;
         }
 
+        /* Study Plan Styles */
+        .study-plan-header-btn {
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .study-plan-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .study-plan-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .add-to-plan-btn {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .add-to-plan-btn:hover {
+            background: #218838;
+        }
+
+        .add-to-plan-btn.in-plan {
+            background: #6c757d;
+        }
+
+        .add-to-plan-btn.in-plan:hover {
+            background: #5a6268;
+        }
+
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
@@ -324,7 +377,13 @@
 </head>
 <body>
     <div class="container">
-        <div class="header">
+        <div class="header" style="position: relative;">
+            <div class="study-plan-header-btn">
+                <a href="studyPlan.html" class="study-plan-btn">📚 Study Plan</a>
+                <button class="add-to-plan-btn" id="addToPlanBtn" onclick="toggleStudyPlan()">
+                    + Add to Study Plan
+                </button>
+            </div>
             <div class="header-left">
                 <a href="index.html" class="back-btn">← Back to List</a>
                 <h1 id="problemTitle">Loading...</h1>
@@ -536,6 +595,37 @@
 
         // Load problem on page load
         loadProblem();
+    </script>
+
+    <!-- Study Plan Management -->
+    <script src="studyPlan.js"></script>
+    <script>
+        function updateStudyPlanButton() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const problemNumber = parseInt(urlParams.get('number'));
+
+            if (problemNumber) {
+                const inPlan = window.studyPlanManager.isProblemInPlan(problemNumber);
+                const btn = document.getElementById('addToPlanBtn');
+                btn.className = 'add-to-plan-btn' + (inPlan ? ' in-plan' : '');
+                btn.textContent = inPlan ? '✓ In Study Plan' : '+ Add to Study Plan';
+            }
+        }
+
+        function toggleStudyPlan() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const problemNumber = parseInt(urlParams.get('number'));
+
+            if (problemNumber) {
+                window.studyPlanManager.toggleProblem(problemNumber);
+                updateStudyPlanButton();
+            }
+        }
+
+        // Update button when page loads and problem is loaded
+        window.addEventListener('load', () => {
+            setTimeout(updateStudyPlanButton, 100);
+        });
     </script>
 </body>
 </html>
