@@ -11,20 +11,45 @@ class AMC10AllCrawler {
 
   // Define tests to crawl (recent years for better quality)
   private testsToCrawl: Array<{year: number, variant: 'A' | 'B'}> = [
-    // Start with a small test
-    { year: 2012, variant: 'A' as 'A' }, // Already crawled, include for consistency
+    // 2024
+    { year: 2024, variant: 'A' as 'A' },
+    { year: 2024, variant: 'B' as 'B' },
+    // 2023
+    { year: 2023, variant: 'A' as 'A' },
+    { year: 2023, variant: 'B' as 'B' },
+    // 2022
+    { year: 2022, variant: 'A' as 'A' },
+    { year: 2022, variant: 'B' as 'B' },
+    // 2021
+    { year: 2021, variant: 'A' as 'A' },
+    { year: 2021, variant: 'B' as 'B' },
+    // 2020
+    { year: 2020, variant: 'A' as 'A' },
+    { year: 2020, variant: 'B' as 'B' },
+    // 2019
+    { year: 2019, variant: 'A' as 'A' },
+    { year: 2019, variant: 'B' as 'B' },
+    // 2018
+    { year: 2018, variant: 'A' as 'A' },
+    { year: 2018, variant: 'B' as 'B' },
+    // 2017
+    { year: 2017, variant: 'A' as 'A' },
+    { year: 2017, variant: 'B' as 'B' },
+    // 2016
+    { year: 2016, variant: 'A' as 'A' },
+    { year: 2016, variant: 'B' as 'B' },
+    // 2015
+    { year: 2015, variant: 'A' as 'A' },
+    { year: 2015, variant: 'B' as 'B' },
+    // 2014
+    { year: 2014, variant: 'A' as 'A' },
+    { year: 2014, variant: 'B' as 'B' },
+    // 2013
+    { year: 2013, variant: 'A' as 'A' },
+    { year: 2013, variant: 'B' as 'B' },
+    // 2012
+    { year: 2012, variant: 'A' as 'A' },
     { year: 2012, variant: 'B' as 'B' },
-    // Uncomment to crawl more tests:
-    // { year: 2020, variant: 'A' },
-    // { year: 2020, variant: 'B' },
-    // { year: 2021, variant: 'A' },
-    // { year: 2021, variant: 'B' },
-    // { year: 2022, variant: 'A' },
-    // { year: 2022, variant: 'B' },
-    // { year: 2023, variant: 'A' },
-    // { year: 2023, variant: 'B' },
-    // { year: 2024, variant: 'A' },
-    // { year: 2024, variant: 'B' },
   ];
 
   async crawl(): Promise<void> {
