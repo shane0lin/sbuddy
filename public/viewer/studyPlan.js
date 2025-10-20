@@ -72,9 +72,17 @@ class StudyPlanManager {
         delete plans[planId];
         this.savePlans(plans);
 
-        // If deleted plan was active, switch to default
+        // If deleted plan was active, switch to another existing plan
         if (this.getActivePlanId() === planId) {
-            this.setActivePlan('default');
+            const remainingPlans = Object.keys(plans);
+            if (remainingPlans.length > 0) {
+                // Switch to the first remaining plan
+                this.setActivePlan(remainingPlans[0]);
+            } else {
+                // No plans left, create a new default plan
+                const newPlanId = this.createPlan('My Study Plan');
+                // createPlan already sets it as active
+            }
         }
     }
 
