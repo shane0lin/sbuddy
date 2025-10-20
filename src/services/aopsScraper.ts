@@ -10,6 +10,11 @@ export interface AMCProblem {
   solutions: string[];
   choices?: string[];
   answer?: string;
+  topics?: string[];                           // Math topics extracted from page
+  difficulty?: 'easy' | 'medium' | 'hard';     // Inferred from problem number
+  seeAlso?: string[];                          // Related problems
+  images?: string[];                            // Image URLs found in problem
+  answerChoicesImage?: string;                  // Answer choices rendered as LaTeX image
 }
 
 export class AoPSScraper {
@@ -107,6 +112,9 @@ export class AoPSScraper {
       const response = await axios.get(url);
       const $ = cheerio.load(response.data);
 
+      // Extract answer choices FIRST (before processing content)
+      const choices = this.extractAnswerChoices($);
+
       // Extract problem content
       const problemContent = this.extractProblemContent($);
       if (!problemContent) {
@@ -117,8 +125,11 @@ export class AoPSScraper {
       // Extract solutions
       const solutions = this.extractSolutions($);
 
-      // Extract answer choices if present
-      const choices = this.extractAnswerChoices($);
+      // Extract additional metadata
+      const topics = this.extractTopics($);
+      const seeAlso = this.extractSeeAlso($);
+      const difficulty = this.inferDifficulty(problemNum);
+      const { images, answerChoicesImage } = this.extractImages($);
 
       return {
         year,
@@ -126,7 +137,12 @@ export class AoPSScraper {
         problemNumber: problemNum,
         content: problemContent,
         solutions,
-        choices
+        choices,
+        topics,
+        difficulty,
+        seeAlso,
+        images,
+        answerChoicesImage
       };
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -139,31 +155,93 @@ export class AoPSScraper {
   }
 
   private extractProblemContent($: cheerio.Root): string | null {
-    // Look for the Problem section
-    const problemSection = $('span#Problem').parent().next();
+    // Look for the Problem section heading
+    const problemHeading = $('span#Problem').parent();
 
-    if (problemSection.length === 0) {
-      // Try alternative selectors
-      const altSection = $('.mw-headline:contains("Problem")').parent().next();
-      if (altSection.length === 0) {
+    let contentElements;
+    if (problemHeading.length === 0) {
+      // Try alternative selector
+      const altHeading = $('.mw-headline:contains("Problem")').parent();
+      if (altHeading.length === 0) {
         return null;
       }
-      return this.cleanText(altSection.text());
+      contentElements = altHeading.nextUntil('h2');
+    } else {
+      // Get all siblings until the next h2 (Solution section)
+      contentElements = problemHeading.nextUntil('h2');
     }
 
-    return this.cleanText(problemSection.text());
+    if (contentElements.length === 0) {
+      return null;
+    }
+
+    // Extract text with LaTeX from all content elements
+    let fullContent = '';
+    contentElements.each((_, element) => {
+      const text = this.extractTextWithLatex($(element));
+      if (text.trim()) {
+        fullContent += text + ' ';
+      }
+    });
+
+    return fullContent.trim() || null;
+  }
+
+  private extractTextWithLatex($element: cheerio.Cheerio): string {
+    // Get the HTML and replace LaTeX images with their alt text
+    let html = $element.html() || '';
+
+    // Replace Asymptote diagram images with a placeholder showing the image URL
+    html = html.replace(/<img[^>]+alt="(\[asy\][^"]*\[\/asy\])"[^>]+src="([^"]+)"[^>]*>/gi, (match, alt, src) => {
+      const imageUrl = src.startsWith('//') ? `https:${src}` : src;
+      return ` [DIAGRAM: ${imageUrl}] `;
+    });
+
+    // Also handle reversed order (src before alt)
+    html = html.replace(/<img[^>]+src="([^"]+)"[^>]+alt="(\[asy\][^"]*\[\/asy\])"[^>]*>/gi, (match, src, alt) => {
+      const imageUrl = src.startsWith('//') ? `https:${src}` : src;
+      return ` [DIAGRAM: ${imageUrl}] `;
+    });
+
+    // Replace LaTeX equation images with their alt text (which contains LaTeX)
+    // Handle both inline math ($...$) and display math (\[...\])
+    html = html.replace(/<img[^>]+alt="([^"]+)"[^>]*>/gi, (match, alt) => {
+      // Only replace if alt contains LaTeX delimiters
+      if (alt.includes('$') || alt.includes('\\[') || alt.includes('\\]')) {
+        return ` ${alt} `;
+      }
+      return match; // Keep non-LaTeX images as-is
+    });
+
+    // Convert back to cheerio element and get text
+    const cheerio = require('cheerio');
+    const $ = cheerio.load(html);
+    return this.cleanText($.text());
   }
 
   private extractSolutions($: cheerio.Root): string[] {
     const solutions: string[] = [];
 
     // Find all solution sections
-    $('.mw-headline').each((_, element) => {
+    $('h2').each((_, element) => {
       const headline = $(element).text();
       if (headline.toLowerCase().includes('solution')) {
-        const solutionContent = $(element).parent().nextUntil('.mw-headline').text();
-        if (solutionContent.trim()) {
-          solutions.push(this.cleanText(solutionContent));
+        // Get all content between this h2 and the next h2
+        const contentElements = $(element).nextUntil('h2');
+
+        if (contentElements.length > 0) {
+          // Extract text with LaTeX preserved
+          let solutionText = '';
+          contentElements.each((_, contentEl) => {
+            const text = this.extractTextWithLatex($(contentEl));
+            if (text.trim()) {
+              solutionText += text + ' ';
+            }
+          });
+
+          if (solutionText.trim()) {
+            solutions.push(this.cleanText(solutionText));
+          }
         }
       }
     });
@@ -173,26 +251,197 @@ export class AoPSScraper {
 
   private extractAnswerChoices($: cheerio.Root): string[] {
     const choices: string[] = [];
-    const text = $('body').text();
 
-    // Look for multiple choice pattern (A) ... (B) ... (C) ... (D) ... (E)
-    const choicePattern = /\([ABCDE]\)[^(]+/g;
-    const matches = text.match(choicePattern);
+    // Get the problem section HTML
+    const problemSection = $('span#Problem').parent().next();
+    let html = problemSection.html() || '';
 
-    if (matches) {
-      choices.push(...matches.map((match: string) => this.cleanText(match)));
+    // Also check if problem section is empty, try alternative
+    if (!html) {
+      const altSection = $('.mw-headline:contains("Problem")').parent().next();
+      html = altSection.html() || '';
     }
 
-    return choices;
+    // Extract from LaTeX image alt text - look for images with answer choices
+    const altMatches = html.match(/alt="([^"]*\\textbf\{[^"]+)"/g);
+
+    if (altMatches) {
+      altMatches.forEach(altMatch => {
+        const altText = altMatch.replace(/alt="/, '').replace(/"$/, '');
+
+        // Parse LaTeX choices: \textbf{(A)}\ text\qquad\textbf{(B)}\ ...
+        const parts = altText.split(/\\textbf\{/);
+
+        parts.forEach(part => {
+          if (part.match(/^\([A-E]\)/)) {
+            const choiceMatch = part.match(/\(([A-E])\)\}\\?\s*(.+?)(?=\\textbf|$)/);
+            if (choiceMatch) {
+              const letter = choiceMatch[1];
+              let text = choiceMatch[2]
+                .replace(/\\qquad/g, '')
+                .replace(/\\quad/g, '')
+                .replace(/\\\s+/g, ' ')
+                .replace(/\\text\{([^}]+)\}/g, '$1')
+                .replace(/\{/g, '')
+                .replace(/\}/g, '')
+                .replace(/\\/g, '')
+                .trim();
+
+              if (text) {
+                choices.push(`(${letter}) ${text}`);
+              }
+            }
+          }
+        });
+      });
+    }
+
+    // Fallback: search in processed text with LaTeX
+    if (choices.length === 0) {
+      const text = this.extractTextWithLatex(problemSection);
+
+      // Look for answer choice pattern: (A) ... (B) ... (C) ... (D) ... (E)
+      const pattern = /\(([A-E])\)\s*([^\(]+?)(?=\s*\([A-E]\)|$)/g;
+      let match;
+      const found: string[] = [];
+
+      while ((match = pattern.exec(text)) !== null) {
+        const letter = match[1];
+        const content = match[2].trim();
+        if (content.length > 0 && content.length < 200) {
+          found.push(`(${letter}) ${content}`);
+        }
+      }
+
+      if (found.length === 5) {
+        return found;
+      }
+    }
+
+    return choices.slice(0, 5); // AMC problems have exactly 5 choices
   }
+
+  private extractTopics($: cheerio.Root): string[] {
+    const topics: string[] = [];
+
+    // Look for category links or tags
+    $('.catlinks a, .mw-normal-catlinks a').each((_, element) => {
+      const topic = $(element).text().trim();
+      if (topic && !topic.includes('AMC') && !topic.includes('Problems')) {
+        topics.push(topic);
+      }
+    });
+
+    return [...new Set(topics)]; // Remove duplicates
+  }
+
+  private extractSeeAlso($: cheerio.Root): string[] {
+    const seeAlso: string[] = [];
+
+    // Find "See Also" section
+    $('.mw-headline').each((_, element) => {
+      const headline = $(element).text().toLowerCase();
+      if (headline.includes('see also')) {
+        const links = $(element).parent().nextUntil('.mw-headline').find('a');
+        links.each((_, link) => {
+          const text = $(link).text().trim();
+          if (text) {
+            seeAlso.push(text);
+          }
+        });
+      }
+    });
+
+    return seeAlso;
+  }
+
+  private inferDifficulty(problemNumber: number): 'easy' | 'medium' | 'hard' {
+    // AMC 10: Problems 1-10 are easy, 11-20 are medium, 21-25 are hard
+    if (problemNumber <= 10) return 'easy';
+    if (problemNumber <= 20) return 'medium';
+    return 'hard';
+  }
+
+  private extractImages($: cheerio.Root): { images: string[], answerChoicesImage?: string } {
+    const images: string[] = [];
+    let answerChoicesImage: string | undefined;
+
+    // Find images ONLY in the problem section (not solutions)
+    // Use nextUntil to get all content between Problem heading and next heading (Solution)
+    const problemHeading = $('span#Problem').parent();
+
+    const processElements = (elements: cheerio.Cheerio) => {
+      elements.each((_, element) => {
+        $(element).find('img').each((_, img) => {
+          const src = $(img).attr('src');
+          const alt = $(img).attr('alt') || '';
+
+          if (src) {
+            let imageUrl: string;
+            if (src.startsWith('http')) {
+              imageUrl = src;
+            } else if (src.startsWith('//')) {
+              imageUrl = `https:${src}`;
+            } else {
+              imageUrl = `https://artofproblemsolving.com${src}`;
+            }
+
+            // Only include LaTeX images
+            if (imageUrl.includes('latex.artofproblemsolving.com')) {
+              // Check if this is the answer choices image
+              if (alt.includes('\\textbf{(A)}') || alt.includes('textbf{(A)}')) {
+                answerChoicesImage = imageUrl;
+              } else {
+                // Regular inline equations - don't store them
+                // (MathJax will render them from the content text)
+              }
+            }
+          }
+        });
+      });
+    };
+
+    if (problemHeading.length === 0) {
+      const altHeading = $('.mw-headline:contains("Problem")').parent();
+      if (altHeading.length > 0) {
+        processElements(altHeading.nextUntil('h2'));
+      }
+    } else {
+      processElements(problemHeading.nextUntil('h2'));
+    }
+
+    return { images, answerChoicesImage };
+  }
+
 
   private cleanText(text: string): string {
     return text
       .replace(/\s+/g, ' ') // Replace multiple whitespace with single space
-      .replace(/\[.*?\]/g, '') // Remove wiki markup
-      .replace(/\$\$([^$]+)\$\$/g, '$1') // Clean LaTeX delimiters
-      .replace(/\$([^$]+)\$/g, '$1') // Clean inline LaTeX
+      .replace(/\[edit\]/gi, '') // Remove wiki edit markers
+      .replace(/\[mathjax\]/gi, '') // Remove mathjax markers
+      .replace(/\[mathjax display=true\]/gi, '') // Remove mathjax display markers
       .trim();
+  }
+
+  // Preserve LaTeX for mathematical rendering
+  private preserveLaTeX($: cheerio.Root, selector: string): string {
+    const element = $(selector);
+    if (element.length === 0) return '';
+
+    // Keep LaTeX delimiters intact for proper rendering
+    let text = element.html() || '';
+
+    // Convert HTML to text while preserving LaTeX
+    text = text
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<\/p>/gi, '\n\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&');
+
+    return text.trim();
   }
 
   private sleep(ms: number): Promise<void> {
@@ -200,17 +449,26 @@ export class AoPSScraper {
   }
 
   convertToSbuddyProblem(amcProblem: AMCProblem, tenantId: string): Omit<Problem, 'id' | 'created_at' | 'updated_at'> {
+    // Build comprehensive tags
+    const tags = [
+      `AMC10${amcProblem.test}`,
+      `${amcProblem.year}`,
+      'competition',
+      'mathematics',
+      ...(amcProblem.topics || [])
+    ];
+
     return {
       title: `${amcProblem.year} AMC 10${amcProblem.test} Problem ${amcProblem.problemNumber}`,
       content: this.formatProblemContent(amcProblem),
       source: 'Art of Problem Solving',
       category: 'Competition',
-      difficulty: 'medium', // AMC 10 is generally medium difficulty
+      difficulty: amcProblem.difficulty || 'medium',
       subject: 'Mathematics',
       exam_type: 'AMC10',
       exam_year: amcProblem.year,
       problem_number: amcProblem.problemNumber,
-      tags: [`AMC10${amcProblem.test}`, `${amcProblem.year}`, 'competition', 'mathematics'],
+      tags: [...new Set(tags)], // Remove duplicates
       solution: amcProblem.solutions.length > 0 ? amcProblem.solutions[0] : undefined,
       tenant_id: tenantId
     };

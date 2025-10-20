@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem Details - AMC 2012 10A</title>
+    <!-- MathJax for LaTeX rendering -->
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .difficulty-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .difficulty-badge.easy { background: #28a745; color: white; }
+        .difficulty-badge.medium { background: #ffc107; color: #333; }
+        .difficulty-badge.hard { background: #dc3545; color: white; }
+
+        .content {
+            padding: 40px;
+        }
+
+        .problem-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-item label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+
+        .info-item .value {
+            font-size: 1.2rem;
+            color: #212529;
+            font-weight: 600;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        .section h2 {
+            color: #495057;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .problem-statement {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #212529;
+            border-left: 4px solid #667eea;
+        }
+
+        .choices {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 12px;
+            margin-top: 15px;
+        }
+
+        .choices h3 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .choice {
+            padding: 8px 0;
+            font-size: 1rem;
+            color: #212529;
+        }
+
+        .solutions {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .solution-card {
+            background: white;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            transition: all 0.3s;
+        }
+
+        .solution-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .solution-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            cursor: pointer;
+        }
+
+        .solution-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .toggle-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .toggle-btn:hover {
+            background: #5568d3;
+        }
+
+        .solution-content {
+            line-height: 1.8;
+            color: #495057;
+            font-size: 1rem;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+
+        .solution-content.expanded {
+            max-height: 10000px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .topics, .see-also {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .tag {
+            background: #e7f3ff;
+            color: #004085;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            padding: 30px 40px;
+            background: #f8f9fa;
+            border-top: 2px solid #e9ecef;
+        }
+
+        .nav-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .nav-btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .nav-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px;
+            color: #6c757d;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px;
+        }
+
+        .images-info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 8px;
+            color: #004085;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .problem-info {
+                flex-direction: column;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <a href="index.html" class="back-btn">← Back to List</a>
+                <h1 id="problemTitle">Loading...</h1>
+            </div>
+            <div id="difficultyBadge"></div>
+        </div>
+
+        <div class="content" id="content">
+            <div class="loading">Loading problem...</div>
+        </div>
+
+        <div class="navigation" id="navigation" style="display: none;">
+            <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">← Previous</button>
+            <button class="nav-btn" id="nextBtn" onclick="navigate(1)">Next →</button>
+        </div>
+    </div>
+
+    <script>
+        let currentProblem = null;
+        let allProblems = [];
+
+        async function loadProblem() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const problemNumber = parseInt(urlParams.get('number'));
+
+            if (!problemNumber) {
+                document.getElementById('content').innerHTML =
+                    '<div class="error">No problem number specified</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('../../crawled_data/amc_2012_10a_problems.json');
+                const data = await response.json();
+                allProblems = data.problems;
+
+                currentProblem = data.problems.find(p => p.problemNumber === problemNumber);
+
+                if (!currentProblem) {
+                    throw new Error('Problem not found');
+                }
+
+                displayProblem(currentProblem);
+                setupNavigation(problemNumber);
+            } catch (error) {
+                document.getElementById('content').innerHTML =
+                    '<div class="error">Error loading problem: ' + error.message + '</div>';
+            }
+        }
+
+        function formatSolutionWithDiagrams(solution) {
+            // Convert [DIAGRAM: URL] markers to actual image tags
+            return solution.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
+                return `<div style="margin: 15px 0; text-align: center;">
+                    <img src="${url.trim()}" alt="Diagram" style="max-width: 100%; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                </div>`;
+            });
+        }
+
+        function displayProblem(problem) {
+            document.getElementById('problemTitle').textContent = `Problem ${problem.problemNumber}`;
+            document.getElementById('difficultyBadge').innerHTML =
+                `<span class="difficulty-badge ${problem.difficulty}">${problem.difficulty}</span>`;
+
+            const choicesHtml = problem.choices && problem.choices.length > 0 ? `
+                <div class="choices">
+                    <h3>Answer Choices</h3>
+                    ${problem.choices.map(choice => `<div class="choice">${choice}</div>`).join('')}
+                </div>
+            ` : '';
+
+            const solutionsHtml = problem.solutions && problem.solutions.length > 0 ? `
+                <div class="section">
+                    <h2>Solutions (${problem.solutions.length} available)</h2>
+                    <div class="solutions">
+                        ${problem.solutions.map((solution, idx) => `
+                            <div class="solution-card">
+                                <div class="solution-header" onclick="toggleSolution(${idx})">
+                                    <div class="solution-title">Solution ${idx + 1}</div>
+                                    <button class="toggle-btn" id="toggleBtn${idx}">Show</button>
+                                </div>
+                                <div class="solution-content" id="solution${idx}">
+                                    ${formatSolutionWithDiagrams(solution)}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '<div class="section"><h2>Solutions</h2><p>No solutions available</p></div>';
+
+            const topicsHtml = problem.topics && problem.topics.length > 0 ? `
+                <div class="section">
+                    <h2>Topics</h2>
+                    <div class="topics">
+                        ${problem.topics.map(topic => `<span class="tag">${topic}</span>`).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            const seeAlsoHtml = problem.seeAlso && problem.seeAlso.length > 0 ? `
+                <div class="section">
+                    <h2>Related Problems</h2>
+                    <div class="see-also">
+                        ${problem.seeAlso.slice(0, 10).map(item => `<span class="tag">${item}</span>`).join('')}
+                    </div>
+                </div>
+            ` : '';
+
+            // Display answer choices image if available
+            const imagesHtml = problem.answerChoicesImage ? `
+                <div style="margin-top: 15px;">
+                    <img src="${problem.answerChoicesImage}" alt="Answer Choices" style="max-width: 100%; margin: 5px 0; background: white; padding: 5px; border-radius: 4px;" />
+                </div>
+            ` : '';
+
+            const html = `
+                <div class="problem-info">
+                    <div class="info-item">
+                        <label>Year</label>
+                        <div class="value">${problem.year}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Test</label>
+                        <div class="value">AMC 10${problem.test}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Problem Number</label>
+                        <div class="value">${problem.problemNumber}</div>
+                    </div>
+                    <div class="info-item">
+                        <label>Difficulty</label>
+                        <div class="value">${problem.difficulty}</div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Problem Statement</h2>
+                    <div class="problem-statement">
+                        ${formatSolutionWithDiagrams(problem.content)}
+                    </div>
+                    ${choicesHtml}
+                    ${imagesHtml}
+                </div>
+
+                ${solutionsHtml}
+                ${topicsHtml}
+                ${seeAlsoHtml}
+            `;
+
+            document.getElementById('content').innerHTML = html;
+
+            // Trigger MathJax rendering after it's loaded
+            const renderMath = () => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
+                }
+            };
+
+            // Wait for MathJax to load if not ready yet
+            if (window.MathJax) {
+                renderMath();
+            } else {
+                // Poll for MathJax to be ready
+                const checkMathJax = setInterval(() => {
+                    if (window.MathJax && window.MathJax.typesetPromise) {
+                        clearInterval(checkMathJax);
+                        renderMath();
+                    }
+                }, 100);
+
+                // Stop checking after 5 seconds
+                setTimeout(() => clearInterval(checkMathJax), 5000);
+            }
+        }
+
+        function toggleSolution(idx) {
+            const content = document.getElementById(`solution${idx}`);
+            const btn = document.getElementById(`toggleBtn${idx}`);
+
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                btn.textContent = 'Show';
+            } else {
+                content.classList.add('expanded');
+                btn.textContent = 'Hide';
+            }
+        }
+
+        function setupNavigation(currentNumber) {
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            const nav = document.getElementById('navigation');
+
+            nav.style.display = 'flex';
+
+            prevBtn.disabled = currentNumber === 1;
+            nextBtn.disabled = currentNumber === 25;
+        }
+
+        function navigate(direction) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentNumber = parseInt(urlParams.get('number'));
+            const newNumber = currentNumber + direction;
+
+            if (newNumber >= 1 && newNumber <= 25) {
+                window.location.href = `problem.html?number=${newNumber}`;
+            }
+        }
+
+        // Load problem on page load
+        loadProblem();
+    </script>
+</body>
+</html>

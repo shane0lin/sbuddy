@@ -17,7 +17,10 @@
     "scrape-amc:test": "ts-node scripts/scrapeAMC.ts --test-connection",
     "scrape-amc:full": "ts-node scripts/scrapeAMC.ts --full-scrape",
     "scrape-amc:demo": "ts-node scripts/demoScraper.ts",
-    "scrape-amc:quick": "ts-node scripts/demoScraper.ts --quick"
+    "scrape-amc:quick": "ts-node scripts/demoScraper.ts --quick",
+    "crawl:2012-amc10a": "ts-node scripts/crawl2012AMC10A.ts",
+    "view:crawled": "ts-node scripts/viewCrawledData.ts",
+    "serve:viewer": "ts-node scripts/serveViewer.ts"
   },
   "dependencies": {
     "@types/form-data": "^2.2.1",
