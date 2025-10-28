@@ -75,7 +75,14 @@ const createTables = async () => {
       solution TEXT,
       tenant_id UUID REFERENCES tenants(id) ON DELETE CASCADE,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      solutions TEXT[],
+      images TEXT[],
+      answer_choices_image TEXT,
+      see_also TEXT[],
+      choices JSONB,
+      crawl_source_url TEXT,
+      crawled_at TIMESTAMP
     );`,
 
     `CREATE TABLE IF NOT EXISTS user_progress (
@@ -144,12 +151,18 @@ const createTables = async () => {
     `CREATE INDEX IF NOT EXISTS idx_problems_tenant ON problems(tenant_id);`,
     `CREATE INDEX IF NOT EXISTS idx_problems_category ON problems(category);`,
     `CREATE INDEX IF NOT EXISTS idx_problems_exam ON problems(exam_type, exam_year);`,
+    `CREATE INDEX IF NOT EXISTS idx_problems_exam_year_number ON problems(exam_year, problem_number);`,
     `CREATE INDEX IF NOT EXISTS idx_user_progress_user ON user_progress(user_id);`,
     `CREATE INDEX IF NOT EXISTS idx_spaced_repetition_next_review ON spaced_repetition_cards(next_review);`,
     `CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);`,
     `CREATE INDEX IF NOT EXISTS idx_users_oauth ON users(oauth_provider, oauth_id);`,
     `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_user ON refresh_tokens(user_id);`,
-    `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);`
+    `CREATE INDEX IF NOT EXISTS idx_refresh_tokens_token ON refresh_tokens(token);`,
+
+    // Add unique constraint for exam problems
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_problems_unique_exam_problem
+     ON problems(exam_type, exam_year, problem_number, tenant_id)
+     WHERE exam_type IS NOT NULL AND exam_year IS NOT NULL AND problem_number IS NOT NULL;`
   ];
 
   for (const query of queries) {

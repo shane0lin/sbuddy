@@ -1,4 +1,6 @@
 import aopsScraper from '../src/services/aopsScraper';
+import crawlerImportService from '../src/services/crawlerImportService';
+import { initializeDatabase } from '../src/models/database';
 import fs from 'fs';
 import path from 'path';
 
@@ -16,6 +18,10 @@ class AMC2012Crawler {
     console.log('='.repeat(70));
 
     try {
+      // Initialize database
+      await initializeDatabase();
+      console.log('✅ Database connection established\n');
+
       // Ensure output directory exists
       this.ensureOutputDirectory();
 
@@ -25,9 +31,12 @@ class AMC2012Crawler {
 
       console.log(`\n✅ Successfully crawled ${problems.length} problems`);
 
-      // Save to file
+      // Save to file (backup)
       const outputPath = path.join(this.outputDir, this.outputFile);
       this.saveToFile(problems, outputPath);
+
+      // Save to database
+      await this.saveToDatabase(problems);
 
       // Display summary
       this.displaySummary(problems, outputPath);
@@ -64,6 +73,37 @@ class AMC2012Crawler {
     const compactPath = filePath.replace('.json', '_compact.json');
     fs.writeFileSync(compactPath, JSON.stringify(data), 'utf-8');
     console.log(`💾 Compact version saved to: ${compactPath}`);
+  }
+
+  private async saveToDatabase(problems: any[]): Promise<void> {
+    console.log('\n💾 Saving to database...');
+
+    const metadata = {
+      crawledAt: new Date().toISOString(),
+      source: 'https://artofproblemsolving.com/wiki/index.php/2012_AMC_10A_Problems',
+      year: 2012,
+      test: 'AMC 10A',
+      totalProblems: problems.length
+    };
+
+    try {
+      const result = await crawlerImportService.bulkImport(problems, metadata);
+
+      console.log(`✅ Database import complete:`);
+      console.log(`   New problems imported: ${result.imported}`);
+      console.log(`   Existing problems updated: ${result.updated}`);
+      console.log(`   Errors: ${result.errors.length}`);
+
+      if (result.errors.length > 0) {
+        console.log(`\n⚠️  Errors encountered:`);
+        result.errors.slice(0, 5).forEach((err, idx) => {
+          console.log(`   ${idx + 1}. Problem ${err.problem?.problemNumber}: ${err.error}`);
+        });
+      }
+    } catch (error) {
+      console.error('❌ Database import failed:', error);
+      throw error;
+    }
   }
 
   private displaySummary(problems: any[], outputPath: string): void {

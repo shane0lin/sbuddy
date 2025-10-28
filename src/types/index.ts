@@ -55,6 +55,14 @@ export interface Problem {
   tenant_id: string;
   created_at: Date;
   updated_at: Date;
+  // Crawler-specific fields
+  solutions?: string[];  // Multiple solution approaches
+  images?: string[];  // Problem diagrams/figures
+  answer_choices_image?: string;  // Rendered answer choices
+  see_also?: string[];  // Related problems/references
+  choices?: any;  // Answer choice data (JSONB)
+  crawl_source_url?: string;  // Original AoPS URL
+  crawled_at?: Date;  // When it was crawled
 }
 
 export interface UserProgress {

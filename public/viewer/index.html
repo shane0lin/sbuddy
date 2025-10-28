@@ -473,6 +473,10 @@
         </div>
     </div>
 
+    <!-- Include configuration and API adapter -->
+    <script src="config.js"></script>
+    <script src="api-adapter.js"></script>
+
     <script>
         let allProblems = [];
         let currentFilter = 'all';
@@ -482,8 +486,7 @@
         // Load index and populate test selector
         async function loadIndex() {
             try {
-                const response = await fetch('../../crawled_data/amc_index.json');
-                const indexData = await response.json();
+                const indexData = await amcData.getTests();
                 availableTests = indexData.tests;
 
                 // Populate test selector
@@ -507,8 +510,7 @@
         // Load a specific test
         async function loadTest(test) {
             try {
-                const response = await fetch(`../../${test.filePath}`);
-                const data = await response.json();
+                const data = await amcData.getTestProblems(test.year, test.variant);
 
                 // Update header
                 document.getElementById('testDescription').textContent =

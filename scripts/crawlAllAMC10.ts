@@ -1,4 +1,6 @@
 import aopsScraper from '../src/services/aopsScraper';
+import crawlerImportService from '../src/services/crawlerImportService';
+import { initializeDatabase } from '../src/models/database';
 import fs from 'fs';
 import path from 'path';
 
@@ -59,6 +61,10 @@ class AMC10AllCrawler {
     console.log('='.repeat(70));
 
     try {
+      // Initialize database
+      await initializeDatabase();
+      console.log('✅ Database connection established\n');
+
       // Ensure output directory exists
       this.ensureOutputDirectory();
 
@@ -93,9 +99,19 @@ class AMC10AllCrawler {
 
       console.log(`✅ Successfully crawled ${problems.length} problems from ${year} AMC 10${variant}`);
 
-      // Save individual test file
+      // Save individual test file (backup)
       const outputPath = path.join(this.outputDir, `amc_${year}_10${variant.toLowerCase()}_problems.json`);
       this.saveToFile(problems, outputPath, year, `AMC 10${variant}`);
+
+      // Save to database
+      const metadata = {
+        crawledAt: new Date().toISOString(),
+        source: `https://artofproblemsolving.com/wiki/index.php/${year}_AMC_10${variant}_Problems`,
+        year: year,
+        test: `AMC 10${variant}`,
+        totalProblems: problems.length
+      };
+      await this.saveToDatabase(problems, metadata);
 
       // Add to combined results
       allResults.push({
@@ -200,6 +216,15 @@ class AMC10AllCrawler {
     console.log('\n' + '='.repeat(70));
     console.log('✨ Crawl process completed!');
     console.log('='.repeat(70));
+  }
+
+  private async saveToDatabase(problems: any[], metadata: any): Promise<void> {
+    try {
+      const result = await crawlerImportService.bulkImport(problems, metadata);
+      console.log(`💾 Database: ${result.imported} new, ${result.updated} updated, ${result.errors.length} errors`);
+    } catch (error) {
+      console.error('⚠️  Database import failed:', error);
+    }
   }
 
   private sleep(ms: number): Promise<void> {

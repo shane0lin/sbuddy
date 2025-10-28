@@ -21,7 +21,8 @@
     "crawl:2012-amc10a": "ts-node scripts/crawl2012AMC10A.ts",
     "crawl:all-amc10": "ts-node scripts/crawlAllAMC10.ts",
     "view:crawled": "ts-node scripts/viewCrawledData.ts",
-    "serve:viewer": "ts-node scripts/serveViewer.ts"
+    "serve:viewer": "ts-node scripts/serveViewer.ts",
+    "import:crawled": "ts-node scripts/importCrawledData.ts"
   },
   "dependencies": {
     "@types/form-data": "^2.2.1",

@@ -9,6 +9,7 @@ import { initializeDatabase } from './models/database';
 import { createGamificationTables } from './services/gamificationService';
 import routes from './routes';
 import authRoutes from './routes/auth';
+import crawledProblemsRoutes from './routes/crawledProblemsRoutes';
 
 const app = express();
 const PORT = config.PORT;
@@ -46,6 +47,7 @@ app.use(passport.session());
 
 // API routes
 app.use('/api/v1/auth', authRoutes); // New enhanced auth routes
+app.use('/api/v1/crawled', crawledProblemsRoutes); // Crawled problems (public read-only)
 app.use('/api/v1', routes); // Existing routes
 
 // Error handling middleware
