@@ -6,7 +6,7 @@
     <title>Study Plan - AMC Problems</title>
     <!-- MathJax for LaTeX rendering -->
     <script>
-        MathJax = {
+        window.MathJax = {
             tex: {
                 inlineMath: [['$', '$']],
                 displayMath: [['$$', '$$'], ['\\[', '\\]']],
@@ -251,6 +251,52 @@
     <script>
         let allProblems = [];
         let problemsWithTest = []; // Store problems with their test file info
+        let mathJaxPoll = null;
+
+        function formatSolutionWithDiagrams(solution) {
+            return solution.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
+                return `<div style="margin: 12px 0; text-align: center;">
+                    <img src="${url.trim()}" alt="Diagram" style="max-width: 100%; width: 100%; height: auto; object-fit: contain; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" />
+                </div>`;
+            });
+        }
+
+        function formatProblemContent(content) {
+            return formatSolutionWithDiagrams(content).replace(/\n/g, '<br>');
+        }
+
+        function typesetMath(element) {
+            if (!element) return;
+
+            const render = () => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([element]).catch(err => console.log('MathJax error:', err));
+                }
+            };
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                render();
+            } else {
+                if (mathJaxPoll) {
+                    clearInterval(mathJaxPoll);
+                }
+
+                mathJaxPoll = setInterval(() => {
+                    if (window.MathJax && window.MathJax.typesetPromise) {
+                        clearInterval(mathJaxPoll);
+                        mathJaxPoll = null;
+                        render();
+                    }
+                }, 100);
+
+                setTimeout(() => {
+                    if (mathJaxPoll) {
+                        clearInterval(mathJaxPoll);
+                        mathJaxPoll = null;
+                    }
+                }, 5000);
+            }
+        }
 
         async function loadProblems() {
             try {
@@ -317,7 +363,9 @@
                 });
             });
 
-            const html = problemsInPlan.map(problem => `
+            const html = problemsInPlan.map(problem => {
+                const formattedContent = formatProblemContent(problem.content || '');
+                return `
                 <div class="problem-card">
                     <div class="problem-header">
                         <div>
@@ -331,17 +379,15 @@
                         </button>
                     </div>
                     <div class="problem-content">
-                        ${problem.content}
+                        ${formattedContent}
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
 
-            document.getElementById('problemList').innerHTML = html;
-
-            // Trigger MathJax rendering
-            if (window.MathJax && window.MathJax.typesetPromise) {
-                MathJax.typesetPromise().catch((err) => console.log('MathJax error:', err));
-            }
+            const listEl = document.getElementById('problemList');
+            listEl.innerHTML = html;
+            typesetMath(listEl);
         }
 
         function loadPlanList() {

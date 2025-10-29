@@ -108,6 +108,18 @@ This document tracks all improvements and fixes made to the AMC Problem Viewer t
 **Files Modified**:
 - `public/viewer/index.html`: MathJax setup, diagram formatting helper, preview rendering adjustments
 
+### 9. Study Plan Rendering Improvements ✅
+
+**Issue**: Problems displayed in `studyPlan.html` still showed raw LaTeX strings and truncated diagrams.
+
+**Solution**:
+- Added the same MathJax bootstrap logic used on the index page, with polling to handle async script loading
+- Reused the diagram formatter for plan entries and converted newlines to `<br>` so statements match the detail page
+- Triggered MathJax typesetting after each study-plan render and ensured diagrams scale responsively
+
+**Files Modified**:
+- `public/viewer/studyPlan.html`: MathJax config, helper utilities, problem rendering updates
+
 ## Data Structure Changes
 
 ### AMCProblem Interface
