@@ -574,6 +574,11 @@
             } else {
                 content.classList.add('expanded');
                 btn.textContent = 'Hide';
+
+                // Render MathJax for newly expanded solution
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    MathJax.typesetPromise([content]).catch((err) => console.log('MathJax error:', err));
+                }
             }
         }
 
