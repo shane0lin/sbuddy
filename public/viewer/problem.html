@@ -439,9 +439,15 @@
             }
         }
 
+        function sanitizeCurrency(text) {
+            if (!text) return text;
+            return text.replace(/\$\$(\s*\d[\d.,]*)\$/g, (match, amount) => `\\$${amount.trim()}$`);
+        }
+
         function formatSolutionWithDiagrams(solution) {
+            const sanitized = sanitizeCurrency(solution);
             // Convert [DIAGRAM: URL] markers to actual image tags
-            return solution.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
+            return sanitized.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
                 return `<div style="margin: 15px 0; text-align: center;">
                     <img src="${url.trim()}" alt="Diagram" style="max-width: 100%; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
                 </div>`;

@@ -120,6 +120,19 @@ This document tracks all improvements and fixes made to the AMC Problem Viewer t
 **Files Modified**:
 - `public/viewer/studyPlan.html`: MathJax config, helper utilities, problem rendering updates
 
+### 10. Currency Formatting Fix ✅
+
+**Issue**: Problems that mention dollar amounts (e.g., 2013 AMC 10A Problem 1) rendered malformed LaTeX like `$$1.50$`, breaking MathJax.
+
+**Solution**:
+- Added a shared `sanitizeCurrency` helper to detect stray currency markers and convert them to `\$amount$`
+- Applied the helper across problem detail, index previews, and study plan cards before diagram replacement
+
+**Files Modified**:
+- `public/viewer/problem.html`: Currency sanitizer injected into `formatSolutionWithDiagrams`
+- `public/viewer/index.html`: Same sanitizer for previews
+- `public/viewer/studyPlan.html`: Same sanitizer for saved plans
+
 ## Data Structure Changes
 
 ### AMCProblem Interface

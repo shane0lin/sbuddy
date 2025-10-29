@@ -493,8 +493,14 @@
         let currentTest = null;
         let mathJaxPoll = null;
 
+        function sanitizeCurrency(text) {
+            if (!text) return text;
+            return text.replace(/\$\$(\s*\d[\d.,]*)\$/g, (match, amount) => `\\$${amount.trim()}$`);
+        }
+
         function formatSolutionWithDiagrams(solution) {
-            return solution.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
+            const sanitized = sanitizeCurrency(solution);
+            return sanitized.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
                 return `<div style="margin: 12px 0; text-align: center;">
                     <img src="${url.trim()}" alt="Diagram" style="max-width: 100%; width: 100%; height: auto; object-fit: contain; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" />
                 </div>`;
