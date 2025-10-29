@@ -95,6 +95,19 @@ This document tracks all improvements and fixes made to the AMC Problem Viewer t
 - `src/services/aopsScraper.ts`: Lines 157-188 (extractProblemContent refactor)
 - `public/viewer/problem.html`: Line 466 (apply diagram formatting)
 
+### 8. Index Page Rendering Improvements ✅
+
+**Issue**: The problem list did not render LaTeX, answer choice text appeared blurry due to gradients, and diagrams were cropped.
+
+**Solution**:
+- Added MathJax v3 configuration to `index.html` so the problem previews render inline and display math
+- Replaced substring previews with formatted content that preserves LaTeX and diagram markers
+- Introduced a reuse of `formatSolutionWithDiagrams()` to embed diagram `<img>` tags in previews
+- Removed the fading overlay and height clamp so answer choices stay crisp and diagrams are fully visible
+
+**Files Modified**:
+- `public/viewer/index.html`: MathJax setup, diagram formatting helper, preview rendering adjustments
+
 ## Data Structure Changes
 
 ### AMCProblem Interface

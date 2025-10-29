@@ -425,6 +425,19 @@
             background: #5a6268;
         }
     </style>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre']
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js" async></script>
 </head>
 <body>
     <div class="container">
@@ -478,6 +491,52 @@
         let currentFilter = 'all';
         let availableTests = [];
         let currentTest = null;
+        let mathJaxPoll = null;
+
+        function formatSolutionWithDiagrams(solution) {
+            return solution.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
+                return `<div style="margin: 12px 0; text-align: center;">
+                    <img src="${url.trim()}" alt="Diagram" style="max-width: 100%; width: 100%; height: auto; object-fit: contain; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" />
+                </div>`;
+            });
+        }
+
+        function formatProblemPreview(content) {
+            return formatSolutionWithDiagrams(content).replace(/\n/g, '<br>');
+        }
+
+        function typesetMath(element) {
+            if (!element) return;
+
+            const render = () => {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    window.MathJax.typesetPromise([element]).catch(err => console.log('MathJax error:', err));
+                }
+            };
+
+            if (window.MathJax && window.MathJax.typesetPromise) {
+                render();
+            } else {
+                if (mathJaxPoll) {
+                    clearInterval(mathJaxPoll);
+                }
+
+                mathJaxPoll = setInterval(() => {
+                    if (window.MathJax && window.MathJax.typesetPromise) {
+                        clearInterval(mathJaxPoll);
+                        mathJaxPoll = null;
+                        render();
+                    }
+                }, 100);
+
+                setTimeout(() => {
+                    if (mathJaxPoll) {
+                        clearInterval(mathJaxPoll);
+                        mathJaxPoll = null;
+                    }
+                }, 5000);
+            }
+        }
 
         // Load index and populate test selector
         async function loadIndex() {
@@ -593,6 +652,7 @@
 
             const html = problems.map(problem => {
                 const inPlan = window.studyPlanManager.isProblemInPlan(problem.problemNumber, testFile);
+                const previewContent = formatProblemPreview(problem.content);
                 return `
                 <div class="problem-card">
                     <div class="problem-number" onclick="viewProblem(${problem.problemNumber})">${problem.problemNumber}</div>
@@ -602,7 +662,7 @@
                             <div class="difficulty-badge ${problem.difficulty}">${problem.difficulty}</div>
                         </div>
                         <div class="problem-preview">
-                            ${problem.content.substring(0, 200)}${problem.content.length > 200 ? '...' : ''}
+                            ${previewContent}
                         </div>
                         <div class="problem-meta">
                             <span>📝 ${problem.solutions?.length || 0} solutions</span>
@@ -618,7 +678,9 @@
             `;
             }).join('');
 
-            document.getElementById('problemsList').innerHTML = html || '<div class="loading">No problems found</div>';
+            const listEl = document.getElementById('problemsList');
+            listEl.innerHTML = html || '<div class="loading">No problems found</div>';
+            typesetMath(listEl);
         }
 
         function toggleStudyPlan(problemNumber, button) {
