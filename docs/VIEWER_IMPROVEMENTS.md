@@ -133,6 +133,18 @@ This document tracks all improvements and fixes made to the AMC Problem Viewer t
 - `public/viewer/index.html`: Same sanitizer for previews
 - `public/viewer/studyPlan.html`: Same sanitizer for saved plans
 
+### 11. Display Math Extraction Fix ✅
+
+**Issue**: Some problems (2018 AMC 10A #12) stored systems of equations as server-generated LaTeX images (`\begin{align*} ...`). Our scraper only captured inline `$...$`, so those equations disappeared from the JSON and viewer.
+
+**Solution**:
+- Enhanced `extractTextWithLatex()` to convert every math image alt-text—and MathJax script tags—back into raw TeX before cleaning
+- Re-scraped the 2018 AMC 10A dataset so the viewer now shows the full system
+
+**Files Modified**:
+- `src/services/aopsScraper.ts`: Treat latex images/scripts as text during extraction
+- `crawled_data/amc_2018_10a_problems.json`: Refreshed dataset with new scraping logic
+
 ## Data Structure Changes
 
 ### AMCProblem Interface

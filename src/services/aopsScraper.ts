@@ -205,18 +205,23 @@ export class AoPSScraper {
 
     // Replace LaTeX equation images with their alt text (which contains LaTeX)
     // Handle both inline math ($...$) and display math (\[...\])
-    html = html.replace(/<img[^>]+alt="([^"]+)"[^>]*>/gi, (match, alt) => {
-      // Only replace if alt contains LaTeX delimiters
-      if (alt.includes('$') || alt.includes('\\[') || alt.includes('\\]')) {
-        return ` ${alt} `;
-      }
-      return match; // Keep non-LaTeX images as-is
-    });
+    html = html.replace(/<img[^>]+alt="([^"]+)"[^>]*>/gi, (_match, alt) => ` ${alt} `);
 
     // Convert back to cheerio element and get text
-    const cheerio = require('cheerio');
     const $ = cheerio.load(html);
-    return this.cleanText($.text());
+
+    // Preserve MathJax script tags containing LaTeX
+    $('script[type^="math/tex"]').each((_, elem: cheerio.Element) => {
+      const tex = $(elem).html() || '';
+      const typeAttr = $(elem).attr('type') || '';
+      const type = typeAttr.toLowerCase();
+      const isDisplay = type.includes('display');
+      const startDelimiter = isDisplay ? '\\[' : '$';
+      const endDelimiter = isDisplay ? '\\]' : '$';
+      $(elem).replaceWith(` ${startDelimiter}${tex.trim()}${endDelimiter} `);
+    });
+
+    return this.cleanText($.root().text());
   }
 
   private extractSolutions($: cheerio.Root): string[] {
