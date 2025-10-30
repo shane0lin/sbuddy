@@ -417,7 +417,7 @@
             }
 
             try {
-                const response = await fetch(`../../crawled_data/${testFile}`);
+                const response = await fetch(`data/${testFile}`);
                 const data = await response.json();
                 allProblems = data.problems;
 

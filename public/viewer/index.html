@@ -547,7 +547,7 @@
         // Load index and populate test selector
         async function loadIndex() {
             try {
-                const response = await fetch('../../crawled_data/amc_index.json');
+                const response = await fetch('data/amc_index.json');
                 const indexData = await response.json();
                 availableTests = indexData.tests;
 

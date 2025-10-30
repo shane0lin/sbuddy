@@ -309,12 +309,12 @@
         async function loadProblems() {
             try {
                 // Load index to get all tests
-                const indexResponse = await fetch('../../crawled_data/amc_index.json');
+                const indexResponse = await fetch('data/amc_index.json');
                 const indexData = await indexResponse.json();
 
                 // Load all test files
                 const testPromises = indexData.tests.map(async (test) => {
-                    const response = await fetch(`../../${test.filePath}`);
+                    const response = await fetch(test.filePath);
                     const data = await response.json();
                     // Tag each problem with its test file
                     return data.problems.map(p => ({
