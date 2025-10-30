@@ -30,6 +30,11 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            /* Mobile safe area support */
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
         }
 
         .container {
@@ -202,12 +207,13 @@
             background: #667eea;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 12px 20px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 16px;
             font-weight: 600;
             transition: all 0.3s;
+            min-height: 44px;
         }
 
         .toggle-btn:hover {
@@ -259,11 +265,12 @@
             padding: 12px 24px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 1rem;
+            font-size: 16px;
             font-weight: 600;
             transition: all 0.3s;
             text-decoration: none;
             display: inline-block;
+            min-height: 44px;
         }
 
         .nav-btn:hover {

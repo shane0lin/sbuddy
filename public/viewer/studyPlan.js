@@ -10,25 +10,34 @@ class StudyPlanManager {
     }
 
     // Get all study plans
-    getPlans() {
-        const plans = localStorage.getItem(this.storageKey);
+    async getPlans() {
+        const Storage = window.CapacitorBridge?.Storage || {
+            get: (key) => Promise.resolve(localStorage.getItem(key))
+        };
+        const plans = await Storage.get(this.storageKey);
         return plans ? JSON.parse(plans) : {};
     }
 
     // Get active plan ID
-    getActivePlanId() {
-        return localStorage.getItem(this.activeKey) || 'default';
+    async getActivePlanId() {
+        const Storage = window.CapacitorBridge?.Storage || {
+            get: (key) => Promise.resolve(localStorage.getItem(key))
+        };
+        return (await Storage.get(this.activeKey)) || 'default';
     }
 
     // Set active plan
-    setActivePlan(planId) {
-        localStorage.setItem(this.activeKey, planId);
+    async setActivePlan(planId) {
+        const Storage = window.CapacitorBridge?.Storage || {
+            set: (key, value) => { localStorage.setItem(key, value); return Promise.resolve(); }
+        };
+        await Storage.set(this.activeKey, planId);
     }
 
     // Get active plan
-    getActivePlan() {
-        const plans = this.getPlans();
-        const activePlanId = this.getActivePlanId();
+    async getActivePlan() {
+        const plans = await this.getPlans();
+        const activePlanId = await this.getActivePlanId();
 
         if (!plans[activePlanId]) {
             // Create default plan if it doesn't exist
@@ -38,20 +47,23 @@ class StudyPlanManager {
                 problems: [],
                 createdAt: new Date().toISOString()
             };
-            this.savePlans(plans);
+            await this.savePlans(plans);
         }
 
         return plans[activePlanId];
     }
 
     // Save all plans
-    savePlans(plans) {
-        localStorage.setItem(this.storageKey, JSON.stringify(plans));
+    async savePlans(plans) {
+        const Storage = window.CapacitorBridge?.Storage || {
+            set: (key, value) => { localStorage.setItem(key, value); return Promise.resolve(); }
+        };
+        await Storage.set(this.storageKey, JSON.stringify(plans));
     }
 
     // Create new plan
-    createPlan(name) {
-        const plans = this.getPlans();
+    async createPlan(name) {
+        const plans = await this.getPlans();
         const planId = 'plan_' + Date.now();
 
         plans[planId] = {
@@ -61,44 +73,44 @@ class StudyPlanManager {
             createdAt: new Date().toISOString()
         };
 
-        this.savePlans(plans);
-        this.setActivePlan(planId);
+        await this.savePlans(plans);
+        await this.setActivePlan(planId);
         return planId;
     }
 
     // Delete plan
-    deletePlan(planId) {
-        const plans = this.getPlans();
+    async deletePlan(planId) {
+        const plans = await this.getPlans();
         delete plans[planId];
-        this.savePlans(plans);
+        await this.savePlans(plans);
 
         // If deleted plan was active, switch to another existing plan
-        if (this.getActivePlanId() === planId) {
+        if ((await this.getActivePlanId()) === planId) {
             const remainingPlans = Object.keys(plans);
             if (remainingPlans.length > 0) {
                 // Switch to the first remaining plan
-                this.setActivePlan(remainingPlans[0]);
+                await this.setActivePlan(remainingPlans[0]);
             } else {
                 // No plans left, create a new default plan
-                const newPlanId = this.createPlan('My Study Plan');
+                const newPlanId = await this.createPlan('My Study Plan');
                 // createPlan already sets it as active
             }
         }
     }
 
     // Rename plan
-    renamePlan(planId, newName) {
-        const plans = this.getPlans();
+    async renamePlan(planId, newName) {
+        const plans = await this.getPlans();
         if (plans[planId]) {
             plans[planId].name = newName;
-            this.savePlans(plans);
+            await this.savePlans(plans);
         }
     }
 
     // Check if problem is in active plan
     // Supports both old format (just number) and new format ({testFile, problemNumber})
-    isProblemInPlan(problemNumber, testFile = null) {
-        const plan = this.getActivePlan();
+    async isProblemInPlan(problemNumber, testFile = null) {
+        const plan = await this.getActivePlan();
         if (!plan.problems) return false;
 
         return plan.problems.some(p => {
@@ -117,13 +129,13 @@ class StudyPlanManager {
     }
 
     // Add problem to active plan (new format with testFile)
-    addProblem(problemNumber, testFile = 'amc_2012_10a_problems.json') {
-        const plans = this.getPlans();
-        const activePlanId = this.getActivePlanId();
+    async addProblem(problemNumber, testFile = 'amc_2012_10a_problems.json') {
+        const plans = await this.getPlans();
+        const activePlanId = await this.getActivePlanId();
         const plan = plans[activePlanId];
 
         // Check if already exists
-        if (this.isProblemInPlan(problemNumber, testFile)) {
+        if (await this.isProblemInPlan(problemNumber, testFile)) {
             return false;
         }
 
@@ -141,14 +153,14 @@ class StudyPlanManager {
             return aNum - bNum;
         });
 
-        this.savePlans(plans);
+        await this.savePlans(plans);
         return true;
     }
 
     // Remove problem from active plan
-    removeProblem(problemNumber, testFile = null) {
-        const plans = this.getPlans();
-        const activePlanId = this.getActivePlanId();
+    async removeProblem(problemNumber, testFile = null) {
+        const plans = await this.getPlans();
+        const activePlanId = await this.getActivePlanId();
         const plan = plans[activePlanId];
 
         const index = plan.problems.findIndex(p => {
@@ -165,26 +177,26 @@ class StudyPlanManager {
 
         if (index > -1) {
             plan.problems.splice(index, 1);
-            this.savePlans(plans);
+            await this.savePlans(plans);
             return true;
         }
         return false;
     }
 
     // Toggle problem in active plan
-    toggleProblem(problemNumber, testFile = 'amc_2012_10a_problems.json') {
-        if (this.isProblemInPlan(problemNumber, testFile)) {
-            this.removeProblem(problemNumber, testFile);
+    async toggleProblem(problemNumber, testFile = 'amc_2012_10a_problems.json') {
+        if (await this.isProblemInPlan(problemNumber, testFile)) {
+            await this.removeProblem(problemNumber, testFile);
             return false;
         } else {
-            this.addProblem(problemNumber, testFile);
+            await this.addProblem(problemNumber, testFile);
             return true;
         }
     }
 
     // Get problem count for active plan
-    getProblemCount() {
-        const plan = this.getActivePlan();
+    async getProblemCount() {
+        const plan = await this.getActivePlan();
         return plan.problems.length;
     }
 }

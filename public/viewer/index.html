@@ -16,6 +16,11 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            /* Mobile safe area support */
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
         }
 
         .container {
@@ -124,7 +129,7 @@
         }
 
         .filter-btn {
-            padding: 10px 20px;
+            padding: 12px 24px;
             border: 2px solid #667eea;
             background: white;
             color: #667eea;
@@ -132,6 +137,8 @@
             cursor: pointer;
             font-weight: 600;
             transition: all 0.3s;
+            min-height: 44px;
+            font-size: 16px; /* Prevent iOS zoom on focus */
         }
 
         .filter-btn:hover {
@@ -284,8 +291,9 @@
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: 2px solid white;
-            padding: 10px 15px;
+            padding: 12px 16px;
             border-radius: 8px;
+            min-height: 44px;
             cursor: pointer;
             font-size: 0.9rem;
             font-weight: 600;
@@ -404,13 +412,14 @@
             background: #28a745;
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 12px 16px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 16px;
             font-weight: 600;
             transition: all 0.3s;
             margin-top: 10px;
+            min-height: 44px;
         }
 
         .add-to-plan-btn:hover {
@@ -727,15 +736,20 @@
     </script>
 
     <!-- Study Plan Management -->
+    <!-- Capacitor Core (for native features) -->
+    <script src="https://cdn.jsdelivr.net/npm/@capacitor/core@5.5.0/dist/capacitor.js"></script>
+    <!-- Capacitor Bridge for native storage -->
+    <script type="module" src="capacitor-bridge.js"></script>
+    <!-- Study Plan Manager -->
     <script src="studyPlan.js"></script>
     <script>
         // Update study plan count on page load
-        function updatePlanCount() {
-            const count = window.studyPlanManager.getProblemCount();
+        async function updatePlanCount() {
+            const count = await window.studyPlanManager.getProblemCount();
             document.getElementById('planCount').textContent = count;
 
             // Update current plan name
-            const plan = window.studyPlanManager.getActivePlan();
+            const plan = await window.studyPlanManager.getActivePlan();
             document.getElementById('currentPlanName').textContent = plan.name;
 
             // Load plan list in dropdown
