@@ -235,6 +235,8 @@
                     <button onclick="createNewPlan()">➕ New Plan</button>
                     <button onclick="renamePlan()">✏️ Rename</button>
                     <button onclick="deletePlan()">🗑️ Delete</button>
+                    <button onclick="saveToFile()">💾 Save to File</button>
+                    <button onclick="loadFromFile()">📂 Load from File</button>
                 </div>
             </div>
 
@@ -451,6 +453,73 @@
         function removeProblem(problemNumber, testFile) {
             window.studyPlanManager.removeProblem(problemNumber, testFile);
             renderStudyPlan();
+        }
+
+        function saveToFile() {
+            // Get all study plans from localStorage
+            const plans = window.studyPlanManager.getPlans();
+
+            // Create a JSON blob
+            const dataStr = JSON.stringify(plans, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+            // Create download link
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `study-plans-${new Date().toISOString().split('T')[0]}.json`;
+
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+
+            alert('Study plans saved to file!');
+        }
+
+        function loadFromFile() {
+            // Create file input
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const text = await file.text();
+                    const loadedPlans = JSON.parse(text);
+
+                    // Validate the loaded data
+                    if (typeof loadedPlans !== 'object' || !loadedPlans) {
+                        throw new Error('Invalid study plan file format');
+                    }
+
+                    // Ask user for confirmation
+                    const confirmMessage = `This will load ${Object.keys(loadedPlans).length} study plan(s). Current plans will be replaced. Continue?`;
+                    if (!confirm(confirmMessage)) {
+                        return;
+                    }
+
+                    // Save to localStorage using the correct keys from StudyPlanManager
+                    localStorage.setItem('amc_study_plans', JSON.stringify(loadedPlans));
+
+                    // Set the first plan as active (or 'default' if it exists)
+                    const activePlanId = loadedPlans['default'] ? 'default' : Object.keys(loadedPlans)[0];
+                    localStorage.setItem('amc_active_plan', activePlanId);
+
+                    // Reload the page to reflect changes
+                    location.reload();
+                } catch (error) {
+                    console.error('Error loading study plans:', error);
+                    alert('Error loading study plans: ' + error.message);
+                }
+            };
+
+            // Trigger file selection
+            input.click();
         }
 
         // Load on page load
