@@ -30,6 +30,11 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
+            /* Mobile safe area support */
+            padding-top: max(20px, env(safe-area-inset-top));
+            padding-bottom: max(20px, env(safe-area-inset-bottom));
+            padding-left: max(20px, env(safe-area-inset-left));
+            padding-right: max(20px, env(safe-area-inset-right));
         }
 
         .container {
@@ -65,14 +70,15 @@
             background: rgba(255, 255, 255, 0.2);
             color: white;
             border: 2px solid white;
-            padding: 10px 20px;
+            padding: 12px 20px;
             border-radius: 8px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 16px;
             font-weight: 600;
             transition: all 0.3s;
             text-decoration: none;
             display: inline-block;
+            min-height: 44px;
         }
 
         .btn:hover {
@@ -99,22 +105,24 @@
 
         .plan-selector select {
             flex: 1;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #667eea;
             border-radius: 8px;
-            font-size: 1rem;
+            font-size: 16px;
+            min-height: 44px;
         }
 
         .plan-actions button {
             background: #667eea;
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 12px 16px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 16px;
             font-weight: 600;
             margin-right: 10px;
+            min-height: 44px;
         }
 
         .plan-actions button:hover {
@@ -162,10 +170,11 @@
             background: #dc3545;
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 10px 16px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
+            font-size: 16px;
+            min-height: 44px;
         }
 
         .remove-btn:hover {
@@ -309,12 +318,12 @@
         async function loadProblems() {
             try {
                 // Load index to get all tests
-                const indexResponse = await fetch('../../crawled_data/amc_index.json');
+                const indexResponse = await fetch('data/amc_index.json');
                 const indexData = await indexResponse.json();
 
                 // Load all test files
                 const testPromises = indexData.tests.map(async (test) => {
-                    const response = await fetch(`../../${test.filePath}`);
+                    const response = await fetch(test.filePath);
                     const data = await response.json();
                     // Tag each problem with its test file
                     return data.problems.map(p => ({
