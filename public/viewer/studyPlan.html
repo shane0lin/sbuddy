@@ -262,11 +262,24 @@
 
         function formatSolutionWithDiagrams(solution) {
             const sanitized = sanitizeCurrency(solution);
-            return sanitized.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
+            // Convert [katex]...[/katex] to $...$ for MathJax
+            const withLatex = sanitized.replace(/\[katex\](.*?)\[\/katex\]/g, '$$$1$$');
+            return withLatex.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
                 return `<div style="margin: 12px 0; text-align: center;">
                     <img src="${url.trim()}" alt="Diagram" style="max-width: 100%; width: 100%; height: auto; object-fit: contain; background: white; padding: 8px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" />
                 </div>`;
             });
+        }
+
+        function formatChoice(choice) {
+            if (!choice) return choice;
+            // First apply standard formatting
+            let formatted = formatSolutionWithDiagrams(choice);
+            // If contains LaTeX commands but not wrapped in $...$ or $$...$$, wrap it
+            if (/\\[a-zA-Z]+/.test(formatted) && !formatted.includes('$')) {
+                formatted = `$${formatted}$`;
+            }
+            return formatted;
         }
 
         function formatProblemContent(content) {

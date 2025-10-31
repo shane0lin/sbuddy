@@ -446,12 +446,25 @@
 
         function formatSolutionWithDiagrams(solution) {
             const sanitized = sanitizeCurrency(solution);
+            // Convert [katex]...[/katex] to $...$ for MathJax
+            const withLatex = sanitized.replace(/\[katex\](.*?)\[\/katex\]/g, '$$$1$$');
             // Convert [DIAGRAM: URL] markers to actual image tags
-            return sanitized.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
+            return withLatex.replace(/\[DIAGRAM:\s*([^\]]+)\]/g, (match, url) => {
                 return `<div style="margin: 15px 0; text-align: center;">
                     <img src="${url.trim()}" alt="Diagram" style="max-width: 100%; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
                 </div>`;
             });
+        }
+
+        function formatChoice(choice) {
+            if (!choice) return choice;
+            // First apply standard formatting
+            let formatted = formatSolutionWithDiagrams(choice);
+            // If contains LaTeX commands but not wrapped in $...$ or $$...$$, wrap it
+            if (/\\[a-zA-Z]+/.test(formatted) && !formatted.includes('$')) {
+                formatted = `$${formatted}$`;
+            }
+            return formatted;
         }
 
         function displayProblem(problem) {
@@ -462,7 +475,7 @@
             const choicesHtml = problem.choices && problem.choices.length > 0 ? `
                 <div class="choices">
                     <h3>Answer Choices</h3>
-                    ${problem.choices.map(choice => `<div class="choice">${choice}</div>`).join('')}
+                    ${problem.choices.map(choice => `<div class="choice">${formatChoice(choice)}</div>`).join('')}
                 </div>
             ` : '';
 
